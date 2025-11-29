@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: serveis-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: serveis_extraordinaris
+      POSTGRES_USER: serveis_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ChangeMeInProduction!}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=ca_ES.UTF-8"
+      TZ: Europe/Madrid
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./backups:/backups
+    ports:
+      - "5432:5432"
+    networks:
+      - serveis_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U serveis_user -d serveis_extraordinaris"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API (preparado para futuro)
+  # backend:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: serveis-backend
+  #   restart: unless-stopped
+  #   environment:
+  #     NODE_ENV: production
+  #     DATABASE_URL: postgresql://serveis_user:${POSTGRES_PASSWORD:-ChangeMeInProduction!}@postgres:5432/serveis_extraordinaris
+  #     JWT_SECRET: ${JWT_SECRET:-ChangeThisSecretInProduction}
+  #     JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-ChangeThisRefreshSecretToo}
+  #     PORT: 3000
+  #     TZ: Europe/Madrid
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   networks:
+  #     - serveis_network
+  #   volumes:
+  #     - ./backend:/app
+  #     - /app/node_modules
+
+  # Frontend (Vanilla JS + Web Components - servidor estàtic)
+  # frontend:
+  #   image: nginx:alpine
+  #   container_name: serveis-frontend
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ./frontend:/usr/share/nginx/html:ro
+  #     - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+  #   ports:
+  #     - "8080:80"
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - serveis_network
+
+  # Nginx Reverse Proxy (opcional para producción)
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: serveis-nginx
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./nginx/ssl:/etc/nginx/ssl:ro
+  #   depends_on:
+  #     - backend
+  #     - frontend
+  #   networks:
+  #     - serveis_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  serveis_network:
+    driver: bridge
