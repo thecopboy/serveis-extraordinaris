@@ -19,11 +19,11 @@ echo "🔄 INICIALITZACIÓ COMPLETA DE POSTGRESQL"
 echo "========================================"
 echo ""
 
-cd $PROJECT_DIR
+cd $PROJECT_DIR/clouding
 
 # 1. Parar contenidors i eliminar volums
 echo "1️⃣  Parant contenidors i eliminant volums..."
-docker compose down -v
+docker compose -f docker-compose.production.yml down -v
 
 echo ""
 
@@ -39,7 +39,7 @@ echo ""
 
 # 3. Iniciar PostgreSQL (carregarà l'schema automàticament)
 echo "3️⃣  Iniciant PostgreSQL amb schema nou..."
-docker compose up -d
+docker compose -f docker-compose.production.yml up -d
 
 echo ""
 echo "⏳ Esperant que PostgreSQL estigui llest..."
@@ -47,7 +47,7 @@ sleep 5
 
 # Esperar que estigui disponible
 for i in {1..30}; do
-    if docker compose exec -T postgres pg_isready -U $POSTGRES_USER &>/dev/null; then
+    if docker compose -f docker-compose.production.yml exec -T postgres pg_isready -U $POSTGRES_USER &>/dev/null; then
         echo "✅ PostgreSQL llest!"
         break
     fi
@@ -59,15 +59,15 @@ echo ""
 
 # 4. Verificar taules
 echo "4️⃣  Verificant taules creades..."
-TABLES=$(docker compose exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -t -c "\dt" | grep -c "public" || echo "0")
+TABLES=$(docker compose -f docker-compose.production.yml exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -t -c "\dt" | grep -c "public" || echo "0")
 
 if [ "$TABLES" -eq 6 ]; then
     echo "✅ Les 6 taules s'han creat correctament!"
-    docker compose exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -c "\dt"
+    docker compose -f docker-compose.production.yml exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -c "\dt"
 else
     echo "⚠️  Només $TABLES taules creades (esperat: 6)"
     echo "   Verificant logs..."
-    docker compose logs postgres | tail -50
+    docker compose -f docker-compose.production.yml logs postgres | tail -50
     exit 1
 fi
 
@@ -77,11 +77,11 @@ echo ""
 echo "5️⃣  Verificant dades seed..."
 echo ""
 echo "Usuaris:"
-docker compose exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -c "SELECT email, nom, rol FROM users;"
+docker compose -f docker-compose.production.yml exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -c "SELECT email, nom, rol FROM users;"
 
 echo ""
 echo "Tipus de serveis:"
-docker compose exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -c "SELECT nom, tipus_remuneracio, tarifa_base FROM tipus_servei LIMIT 5;"
+docker compose -f docker-compose.production.yml exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -c "SELECT nom, tipus_remuneracio, tarifa_base FROM tipus_servei LIMIT 5;"
 
 echo ""
 echo "========================================"
