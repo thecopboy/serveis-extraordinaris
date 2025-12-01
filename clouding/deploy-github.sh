@@ -43,6 +43,7 @@ echo ""
 echo "📋 Preparant fitxers..."
 cp clouding/docker-compose.production.yml docker-compose.yml
 cp clouding/.env.production .env
+# schema.sql ja està a l'arrel del repositori
 chmod +x clouding/*.sh
 
 echo "✓ Fitxers preparats"

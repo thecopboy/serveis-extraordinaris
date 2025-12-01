@@ -11,7 +11,7 @@ services:
       TZ: ${TZ:-Europe/Madrid}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ../schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./backups:/backups
     ports:
       # Només accessible des de localhost (més segur)
