@@ -104,7 +104,7 @@ echo ""
 
 # 6. Connexió a PostgreSQL
 echo "🔌 6. Provant connexió a PostgreSQL..."
-if docker compose exec -T postgres pg_isready -U $POSTGRES_USER -d $POSTGRES_DB &> /dev/null; then
+if docker compose exec -T postgres pg_isready -U postgres -d $POSTGRES_DB &> /dev/null; then
     echo -e "${GREEN}✓ PostgreSQL accepta connexions${NC}"
 else
     echo -e "${RED}✗ PostgreSQL no accepta connexions${NC}"
@@ -115,38 +115,38 @@ echo ""
 
 # 7. Verificar version PostgreSQL
 echo "🗄️  7. Versió de PostgreSQL..."
-docker compose exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -t -c "SELECT version();" | head -1
+docker compose exec -T postgres psql -U postgres -d $POSTGRES_DB -t -c "SELECT version();" | head -1
 
 echo ""
 
 # 8. Llistar taules
 echo "📊 8. Taules de la base de dades..."
-TABLES=$(docker compose exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -t -c "\dt" | grep -c "public")
+TABLES=$(docker compose exec -T postgres psql -U postgres -d $POSTGRES_DB -t -c "\dt" | grep -c "public")
 
 if [ "$TABLES" -ge 6 ]; then
     echo -e "${GREEN}✓ Trobades $TABLES taules${NC}"
-    docker compose exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -c "\dt"
+    docker compose exec -T postgres psql -U postgres -d $POSTGRES_DB -c "\dt"
 else
     echo -e "${YELLOW}⚠️  Només $TABLES taules trobades (esperat: 6)${NC}"
-    docker compose exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -c "\dt"
+    docker compose exec -T postgres psql -U postgres -d $POSTGRES_DB -c "\dt"
 fi
 
 echo ""
 
 # 9. Verificar dades seed
 echo "👤 9. Verificant dades seed..."
-USER_COUNT=$(docker compose exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -t -c "SELECT COUNT(*) FROM users;" | tr -d ' ')
+USER_COUNT=$(docker compose exec -T postgres psql -U postgres -d $POSTGRES_DB -t -c "SELECT COUNT(*) FROM users;" | tr -d ' ')
 
 if [ "$USER_COUNT" -ge 1 ]; then
     echo -e "${GREEN}✓ Usuaris trobats: $USER_COUNT${NC}"
-    docker compose exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -c "SELECT email, nom, rol FROM users;"
+    docker compose exec -T postgres psql -U postgres -d $POSTGRES_DB -c "SELECT email, nom, rol FROM users;"
 else
     echo -e "${YELLOW}⚠️  No s'han trobat usuaris seed${NC}"
 fi
 
 echo ""
 
-TIPUS_COUNT=$(docker compose exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -t -c "SELECT COUNT(*) FROM tipus_servei;" | tr -d ' ')
+TIPUS_COUNT=$(docker compose exec -T postgres psql -U postgres -d $POSTGRES_DB -t -c "SELECT COUNT(*) FROM tipus_servei;" | tr -d ' ')
 
 if [ "$TIPUS_COUNT" -ge 1 ]; then
     echo -e "${GREEN}✓ Tipus de serveis trobats: $TIPUS_COUNT${NC}"
