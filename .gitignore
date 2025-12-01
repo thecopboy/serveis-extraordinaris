@@ -2,6 +2,7 @@
 .env
 .env.local
 .env.production
+clouding/.env.production
 
 # Database backups
 backups/*.sql
