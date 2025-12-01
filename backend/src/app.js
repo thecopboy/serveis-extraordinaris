@@ -97,9 +97,22 @@ app.get('/', (req, res) => {
 app.get('/api/v1', (req, res) => {
   res.json({
     message: 'API v1 - Serveis Extraordinaris',
-    status: 'ready'
+    status: 'ready',
+    endpoints: {
+      auth: '/api/v1/auth'
+    }
   });
 });
+
+// ========================================
+// RUTES DE L'API
+// ========================================
+
+// Importar i registrar rutes d'autenticació
+import authRoutes from './routes/authRoutes.js';
+app.use('/api/v1/auth', authRoutes);
+
+// ========================================
 
 // Ruta de test d'errors (només development)
 if (process.env.NODE_ENV === 'development') {
