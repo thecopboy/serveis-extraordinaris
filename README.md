@@ -45,6 +45,13 @@ Sistema complet per gestionar serveis extraordinaris amb compensació en diners 
 
 ## 🔧 Instal·lació a Clouding
 
+### Servidor de Producció
+- **Host**: 187.33.157.180
+- **Usuari**: themacboy
+- **SO**: Ubuntu 24.04.3 LTS
+- **Docker**: 29.1.1
+- **Docker Compose**: v2.40.3
+
 ### 1. Instal·lar Docker
 
 ```bash
@@ -66,56 +73,59 @@ docker --version
 docker compose version
 ```
 
-### 2. Clonar o pujar el projecte
+### 2. Clonar projecte
 
 ```bash
-# Opció A: Clonar des de Git
-git clone https://github.com/tuusuari/serveis-extraordinaris.git
+# Clonar des de GitHub
+cd ~
+git clone https://github.com/thecopboy/serveis-extraordinaris.git
 cd serveis-extraordinaris
-
-# Opció B: Pujar manualment amb scp
-scp -r ./serveis-extraordinaris root@IP_SERVIDOR:/opt/
 ```
 
 ### 3. Configurar variables d'entorn
 
 ```bash
-# Copiar fitxer d'exemple
-cp .env.example .env
+# Des del teu ordinador local, copiar secrets
+scp clouding/.env.production themacboy@187.33.157.180:~/serveis-extraordinaris/.env
 
-# Editar amb nano o vim
-nano .env
-
-# Generar secrets segurs
-openssl rand -base64 32  # Per JWT_SECRET
-openssl rand -base64 32  # Per JWT_REFRESH_SECRET
+# Verificar
+cat .env | grep POSTGRES_USER
+# Ha de mostrar: POSTGRES_USER=themacboy
 ```
 
-### 4. Iniciar els serveis
+**Variables configurades**:
+- `POSTGRES_USER=themacboy` (superusuari PostgreSQL)
+- `POSTGRES_DB=serveis_extraordinaris`
+- `POSTGRES_PASSWORD=...` (secret generat 256-bit)
+- `JWT_SECRET=...` (secret 256-bit)
+- `JWT_REFRESH_SECRET=...` (secret 256-bit)
+
+### 4. Iniciar PostgreSQL
 
 ```bash
-# Crear carpeta de backups
-mkdir -p backups
-
-# Pujar els contenidors
-docker compose up -d
-
-# Veure logs
-docker compose logs -f postgres
-
-# Verificar estat
-docker compose ps
+# Executar script d'inicialització
+./clouding/start-fresh.sh
 ```
 
-### 5. Verificar base de dades
+Aquest script:
+- Elimina contenidors i volums antics
+- Inicia PostgreSQL amb docker-compose.production.yml
+- Carrega l'schema.sql (6 taules + triggers + vistes)
+- Carrega dades seed (usuari admin + tipus de serveis)
+- Verifica que tot funciona correctament
+
+### 5. Verificar instal·lació
 
 ```bash
-# Connectar a PostgreSQL
-docker compose exec postgres psql -U serveis_user -d serveis_extraordinaris
+# Comprovar estat complet
+./clouding/check-status.sh
+
+# Connexió manual a PostgreSQL
+cd ~/serveis-extraordinaris/clouding
+docker compose -f docker-compose.production.yml exec postgres psql -U themacboy -d serveis_extraordinaris
 
 # Dins de psql:
-\dt                           # Veure taules
-\df                           # Veure funcions/triggers
+\dt                           # Veure 6 taules
 SELECT * FROM users;          # Veure usuari admin
 \q                            # Sortir
 ```
@@ -149,7 +159,9 @@ serveis-extraordinaris/
 
 **⚠️ CANVIAR EN PRODUCCIÓ!**
 
-- **Email**: `admin@serveis.local`
+- **Email**: `themacboy72@gmail.com`
+- **Nom**: Pau López
+- **Pseudònim**: themacboy
 - **Contrasenya**: `Admin123!`
 - **Rol**: Admin
 
@@ -158,47 +170,72 @@ serveis-extraordinaris/
 ### Gestió de contenidors
 
 ```bash
+# Iniciar serveis
+cd ~/serveis-extraordinaris/clouding
+docker compose -f docker-compose.production.yml up -d
+
 # Aturar serveis
-docker compose down
+docker compose -f docker-compose.production.yml down
 
 # Reiniciar serveis
-docker compose restart
+docker compose -f docker-compose.production.yml restart
 
 # Veure logs en temps real
-docker compose logs -f
+docker compose -f docker-compose.production.yml logs -f postgres
 
-# Veure logs només de postgres
-docker compose logs -f postgres
+# Reiniciar des de zero (elimina dades!)
+cd ~/serveis-extraordinaris
+./clouding/start-fresh.sh
+
+# Verificar estat complet
+./clouding/check-status.sh
 ```
 
 ### Backups
 
 ```bash
-# Crear backup manual
-docker compose exec postgres pg_dump -U serveis_user serveis_extraordinaris > backups/backup_$(date +%Y%m%d_%H%M%S).sql
+# Backup manual
+cd ~/serveis-extraordinaris
+./clouding/backup.sh
+
+# Backups automàtics (configurar cron)
+crontab -e
+# Afegir: 0 3 * * * /home/themacboy/serveis-extraordinaris/clouding/backup.sh >> /var/log/serveis-backup.log 2>&1
 
 # Restaurar backup
-docker compose exec -T postgres psql -U serveis_user serveis_extraordinaris < backups/backup_20251129_120000.sql
+cd ~/serveis-extraordinaris/clouding
+gunzip -c ../backups/backup_20251201_030000.sql.gz | docker compose -f docker-compose.production.yml exec -T postgres psql -U themacboy -d serveis_extraordinaris
 ```
 
 ### Manteniment
 
 ```bash
 # Netejar tokens expirats
-docker compose exec postgres psql -U serveis_user -d serveis_extraordinaris -c "SELECT netejar_tokens_expirats();"
+cd ~/serveis-extraordinaris
+./clouding/cleanup_tokens.sh
+
+# Configurar neteja automàtica (cron)
+crontab -e
+# Afegir: 0 4 * * * /home/themacboy/serveis-extraordinaris/clouding/cleanup_tokens.sh >> /var/log/serveis-cleanup.log 2>&1
 
 # Veure mida de la base de dades
-docker compose exec postgres psql -U serveis_user -d serveis_extraordinaris -c "SELECT pg_size_pretty(pg_database_size('serveis_extraordinaris'));"
+cd ~/serveis-extraordinaris/clouding
+docker compose -f docker-compose.production.yml exec postgres psql -U themacboy -d serveis_extraordinaris -c "SELECT pg_size_pretty(pg_database_size('serveis_extraordinaris'));"
 ```
 
 ### Actualitzacions
 
 ```bash
-# Actualitzar schema (amb precaució!)
-docker compose exec -i postgres psql -U serveis_user serveis_extraordinaris < schema.sql
+# Actualitzar codi des de GitHub
+cd ~/serveis-extraordinaris
+git pull
 
-# Reiniciar només PostgreSQL
-docker compose restart postgres
+# Si has canviat l'schema SQL, recrear BD
+./clouding/start-fresh.sh
+
+# Si només has canviat configuració
+cd clouding
+docker compose -f docker-compose.production.yml restart
 ```
 
 ## 🌐 Configuració de Firewall (UFW)
@@ -233,11 +270,14 @@ docker compose exec postgres psql -U serveis_user -d serveis_extraordinaris -c "
 
 ## 🔄 Roadmap
 
-### Fase 1: Base de Dades ✅
+### Fase 1: Base de Dades ✅ COMPLETAT
 - [x] Disseny esquema PostgreSQL
 - [x] Implementació triggers i validacions
 - [x] Docker Compose per PostgreSQL
 - [x] Scripts de backup
+- [x] Desplegament a Clouding (187.33.157.180)
+- [x] 6 taules creades amb seed data
+- [x] Usuari admin personalitzat
 
 ### Fase 2: Backend API (En curs)
 - [ ] Crear API REST (Node.js + Express/Fastify)
@@ -317,5 +357,6 @@ Propietari - Tots els drets reservats.
 ---
 
 **Data de creació**: 29 de novembre de 2025  
-**Última actualització**: 29 de novembre de 2025  
-**Versió**: 1.0.0
+**Última actualització**: 1 de desembre de 2025  
+**Versió**: 1.0.1  
+**Estat**: PostgreSQL desplegat i funcionant ✅
