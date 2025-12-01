@@ -129,7 +129,7 @@ CREATE INDEX idx_refresh_tokens_usuari ON refresh_tokens(usuari_id);
 CREATE INDEX idx_refresh_tokens_hash ON refresh_tokens(token_hash);
 CREATE INDEX idx_refresh_tokens_expira ON refresh_tokens(expira_at);
 CREATE INDEX idx_refresh_tokens_actius ON refresh_tokens(usuari_id, revocat, expira_at) 
-    WHERE revocat = false AND expira_at > CURRENT_TIMESTAMP;
+    WHERE revocat = false;
 
 COMMENT ON TABLE refresh_tokens IS 'Gestió de sessions JWT amb suport multi-dispositiu';
 
