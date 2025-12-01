@@ -510,13 +510,13 @@ INSERT INTO users (
     rol,
     actiu
 ) VALUES (
-    'Admin',
-    'Sistema',
+    'Pau',
+    'López',
     NULL,
-    'admin',
+    'themacboy',
     'ADM-00001',
     'Administració',
-    'admin@serveis.local',
+    'themacboy72@gmail.com',
     '$2b$10$rKjQXQBxzYVhZYqVp9JHKu0Y8yqPJxWkVx0J8YJFYZqVp9JHKu0Y8',
     'admin',
     true
