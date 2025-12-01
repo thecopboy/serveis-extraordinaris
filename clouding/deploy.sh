@@ -80,11 +80,11 @@ echo ""
 echo "📤 PAS 2/5: Pujant fitxers al servidor..."
 echo ""
 
-scp clouding/docker-compose.production.yml $SSH_USER@$SERVER_IP:/home/thecopboy/serveis-extraordinaris/docker-compose.yml
-scp clouding/.env.production $SSH_USER@$SERVER_IP:/home/thecopboy/serveis-extraordinaris/.env
-scp schema.sql $SSH_USER@$SERVER_IP:/home/thecopboy/serveis-extraordinaris/schema.sql
-scp clouding/backup.sh $SSH_USER@$SERVER_IP:/home/thecopboy/serveis-extraordinaris/backup.sh
-scp clouding/cleanup_tokens.sh $SSH_USER@$SERVER_IP:/home/thecopboy/serveis-extraordinaris/cleanup_tokens.sh
+scp clouding/docker-compose.production.yml $SSH_USER@$SERVER_IP:/home/themacboy/serveis-extraordinaris/docker-compose.yml
+scp clouding/.env.production $SSH_USER@$SERVER_IP:/home/themacboy/serveis-extraordinaris/.env
+scp schema.sql $SSH_USER@$SERVER_IP:/home/themacboy/serveis-extraordinaris/schema.sql
+scp clouding/backup.sh $SSH_USER@$SERVER_IP:/home/themacboy/serveis-extraordinaris/backup.sh
+scp clouding/cleanup_tokens.sh $SSH_USER@$SERVER_IP:/home/themacboy/serveis-extraordinaris/cleanup_tokens.sh
 
 echo "✅ Fitxers pujats correctament"
 
@@ -95,7 +95,7 @@ echo ""
 read -p "Prémer Enter per continuar..."
 
 ssh $SSH_USER@$SERVER_IP << 'EOF'
-cd /home/thecopboy/serveis-extraordinaris
+cd /home/themacboy/serveis-extraordinaris
 chmod +x backup.sh cleanup_tokens.sh
 docker compose pull
 docker compose up -d
@@ -112,7 +112,7 @@ echo "✅ PAS 4/5: Verificant instal·lació..."
 echo ""
 
 ssh $SSH_USER@$SERVER_IP << 'EOF'
-cd /home/thecopboy/serveis-extraordinaris
+cd /home/themacboy/serveis-extraordinaris
 echo "📊 Estat del contenidor:"
 docker compose ps
 echo ""
@@ -130,11 +130,11 @@ echo ""
 
 ssh $SSH_USER@$SERVER_IP << 'EOF'
 # Provar backup manual
-/home/thecopboy/serveis-extraordinaris/backup.sh
+/home/themacboy/serveis-extraordinaris/backup.sh
 
 # Configurar cron
-(crontab -l 2>/dev/null; echo "0 3 * * * /home/thecopboy/serveis-extraordinaris/backup.sh >> /var/log/serveis-backup.log 2>&1") | crontab -
-(crontab -l 2>/dev/null; echo "0 4 * * * /home/thecopboy/serveis-extraordinaris/cleanup_tokens.sh >> /var/log/serveis-cleanup.log 2>&1") | crontab -
+(crontab -l 2>/dev/null; echo "0 3 * * * /home/themacboy/serveis-extraordinaris/backup.sh >> /var/log/serveis-backup.log 2>&1") | crontab -
+(crontab -l 2>/dev/null; echo "0 4 * * * /home/themacboy/serveis-extraordinaris/cleanup_tokens.sh >> /var/log/serveis-cleanup.log 2>&1") | crontab -
 
 echo "✅ Backups configurats:"
 crontab -l | grep serveis

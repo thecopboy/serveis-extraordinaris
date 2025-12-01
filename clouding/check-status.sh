@@ -14,7 +14,7 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-PROJECT_DIR="/home/thecopboy/serveis-extraordinaris"
+PROJECT_DIR="/home/themacboy/serveis-extraordinaris"
 
 # 1. Verificar que el directori existeix
 echo "📁 1. Verificant directori del projecte..."

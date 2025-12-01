@@ -91,7 +91,7 @@ fi
 # 7. Crear directori del projecte
 echo ""
 echo "📁 Creant directori del projecte..."
-PROJECT_DIR="/home/thecopboy/serveis-extraordinaris"
+PROJECT_DIR="/home/themacboy/serveis-extraordinaris"
 mkdir -p $PROJECT_DIR
 cd $PROJECT_DIR
 

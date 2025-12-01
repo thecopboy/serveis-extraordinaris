@@ -1,8 +1,8 @@
 #!/bin/bash
 # Verificació ràpida de PostgreSQL
-# Executa: ssh thecopboy@IP_SERVIDOR 'bash -s' < clouding/quick-check.sh
+# Executa: ssh themacboy@IP_SERVIDOR 'bash -s' < clouding/quick-check.sh
 
-cd /home/thecopboy/serveis-extraordinaris
+cd /home/themacboy/serveis-extraordinaris
 
 echo "🔍 VERIFICACIÓ RÀPIDA"
 echo "===================="
