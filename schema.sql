@@ -510,8 +510,8 @@ INSERT INTO users (
     rol,
     actiu
 ) VALUES (
-    'Pau',
-    'López',
+    'themacboy',
+    'themacboy',
     NULL,
     'themacboy',
     'ADM-00001',
