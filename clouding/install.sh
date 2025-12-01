@@ -91,9 +91,8 @@ fi
 # 7. Crear directori del projecte
 echo ""
 echo "📁 Creant directori del projecte..."
-PROJECT_DIR="/opt/serveis-extraordinaris"
-sudo mkdir -p $PROJECT_DIR
-sudo chown $USER:$USER $PROJECT_DIR
+PROJECT_DIR="/home/thecopboy/serveis-extraordinaris"
+mkdir -p $PROJECT_DIR
 cd $PROJECT_DIR
 
 echo -e "${GREEN}✓ Directori creat: $PROJECT_DIR${NC}"

@@ -7,7 +7,7 @@
 
 set -e
 
-PROJECT_DIR="/opt/serveis-extraordinaris"
+PROJECT_DIR="/home/thecopboy/serveis-extraordinaris"
 
 echo "=================================="
 echo "🧹 Neteja de Tokens - $(date)"

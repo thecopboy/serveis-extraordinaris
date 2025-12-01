@@ -8,7 +8,7 @@
 set -e
 
 # Configuració
-PROJECT_DIR="$HOME/serveis-extraordinaris"
+PROJECT_DIR="/home/thecopboy/serveis-extraordinaris"
 BACKUP_DIR="$PROJECT_DIR/backups"
 DATE=$(date +%Y%m%d_%H%M%S)
 BACKUP_FILE="$BACKUP_DIR/backup_$DATE.sql"
