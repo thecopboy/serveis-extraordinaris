@@ -14,8 +14,8 @@ services:
       - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./backups:/backups
     ports:
-      # Només accessible des de localhost (més segur)
-      - "127.0.0.1:5432:5432"
+      # PostgreSQL accessible dins del contenidor i localhost
+      - "5432:5432"
     networks:
       - serveis_network
     healthcheck:

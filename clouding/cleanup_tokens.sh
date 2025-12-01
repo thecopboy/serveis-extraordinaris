@@ -22,7 +22,7 @@ echo "=================================="
 cd "$PROJECT_DIR"
 
 # Executar funció de neteja
-RESULT=$(docker compose exec -T postgres psql -U postgres -d serveis_extraordinaris -t -c "SELECT netejar_tokens_expirats();")
+RESULT=$(docker compose exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -t -c "SELECT netejar_tokens_expirats();")
 
 echo "Tokens eliminats: $RESULT"
 echo "=================================="
