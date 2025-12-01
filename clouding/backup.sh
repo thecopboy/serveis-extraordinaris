@@ -10,6 +10,12 @@ set -e
 # Configuració
 PROJECT_DIR="/home/themacboy/serveis-extraordinaris"
 BACKUP_DIR="$PROJECT_DIR/backups"
+
+# Carregar variables d'entorn
+if [ -f "$PROJECT_DIR/.env" ]; then
+    export $(grep -v '^#' "$PROJECT_DIR/.env" | xargs)
+fi
+POSTGRES_USER=${POSTGRES_USER:-themacboy}
 DATE=$(date +%Y%m%d_%H%M%S)
 BACKUP_FILE="$BACKUP_DIR/backup_$DATE.sql"
 RETENTION_DAYS=30
@@ -32,7 +38,7 @@ fi
 # Crear backup
 echo "Creant backup..."
 cd "$PROJECT_DIR"
-docker compose exec -T postgres pg_dump -U serveis_user serveis_extraordinaris > "$BACKUP_FILE"
+docker compose exec -T postgres pg_dump -U $POSTGRES_USER serveis_extraordinaris > "$BACKUP_FILE"
 
 if [ $? -eq 0 ]; then
     # Comprimir

@@ -8,6 +8,13 @@ set -e
 
 PROJECT_DIR="/home/themacboy/serveis-extraordinaris"
 
+# Carregar variables d'entorn
+if [ -f "$PROJECT_DIR/.env" ]; then
+    export $(grep -v '^#' "$PROJECT_DIR/.env" | xargs)
+fi
+POSTGRES_USER=${POSTGRES_USER:-themacboy}
+POSTGRES_DB=${POSTGRES_DB:-serveis_extraordinaris}
+
 echo "🔄 INICIALITZACIÓ COMPLETA DE POSTGRESQL"
 echo "========================================"
 echo ""
@@ -40,7 +47,7 @@ sleep 5
 
 # Esperar que estigui disponible
 for i in {1..30}; do
-    if docker compose exec -T postgres pg_isready -U serveis_user &>/dev/null; then
+    if docker compose exec -T postgres pg_isready -U $POSTGRES_USER &>/dev/null; then
         echo "✅ PostgreSQL llest!"
         break
     fi
@@ -52,11 +59,11 @@ echo ""
 
 # 4. Verificar taules
 echo "4️⃣  Verificant taules creades..."
-TABLES=$(docker compose exec -T postgres psql -U serveis_user -d serveis_extraordinaris -t -c "\dt" | grep -c "public" || echo "0")
+TABLES=$(docker compose exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -t -c "\dt" | grep -c "public" || echo "0")
 
 if [ "$TABLES" -eq 6 ]; then
     echo "✅ Les 6 taules s'han creat correctament!"
-    docker compose exec -T postgres psql -U serveis_user -d serveis_extraordinaris -c "\dt"
+    docker compose exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -c "\dt"
 else
     echo "⚠️  Només $TABLES taules creades (esperat: 6)"
     echo "   Verificant logs..."
@@ -70,11 +77,11 @@ echo ""
 echo "5️⃣  Verificant dades seed..."
 echo ""
 echo "Usuaris:"
-docker compose exec -T postgres psql -U serveis_user -d serveis_extraordinaris -c "SELECT email, nom, rol FROM users;"
+docker compose exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -c "SELECT email, nom, rol FROM users;"
 
 echo ""
 echo "Tipus de serveis:"
-docker compose exec -T postgres psql -U serveis_user -d serveis_extraordinaris -c "SELECT nom, tipus_remuneracio, tarifa_base FROM tipus_servei LIMIT 5;"
+docker compose exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -c "SELECT nom, tipus_remuneracio, tarifa_base FROM tipus_servei LIMIT 5;"
 
 echo ""
 echo "========================================"
