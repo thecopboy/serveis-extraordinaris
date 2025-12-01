@@ -76,7 +76,7 @@ echo ""
 
 # 4. Healthcheck
 echo "🏥 4. Verificant salut del contenidor..."
-HEALTH=$(docker inspect --format='{{.State.Health.Status}}' serveis-postgres-prod 2>/dev/null || echo "no-healthcheck")
+HEALTH=$(docker inspect --format='{{.State.Health.Status}}' serveis-postgres 2>/dev/null || echo "no-healthcheck")
 
 if [ "$HEALTH" = "healthy" ]; then
     echo -e "${GREEN}✓ Contenidor HEALTHY${NC}"
@@ -152,7 +152,7 @@ echo ""
 # 10. Recursos del sistema
 echo "💻 10. Recursos del sistema..."
 echo "CPU i Memòria del contenidor:"
-docker stats serveis-postgres-prod --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}"
+docker stats serveis-postgres --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}"
 
 echo ""
 
