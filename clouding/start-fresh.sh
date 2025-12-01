@@ -74,7 +74,7 @@ docker compose exec -T postgres psql -U serveis_user -d serveis_extraordinaris -
 
 echo ""
 echo "Tipus de serveis:"
-docker compose exec -T postgres psql -U serveis_user -d serveis_extraordinaris -c "SELECT nom, preu_hora FROM tipus_servei LIMIT 5;"
+docker compose exec -T postgres psql -U serveis_user -d serveis_extraordinaris -c "SELECT nom, tipus_remuneracio, tarifa_base FROM tipus_servei LIMIT 5;"
 
 echo ""
 echo "========================================"
