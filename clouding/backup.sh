@@ -38,7 +38,7 @@ fi
 # Crear backup
 echo "Creant backup..."
 cd "$PROJECT_DIR"
-docker compose exec -T postgres pg_dump -U $POSTGRES_USER serveis_extraordinaris > "$BACKUP_FILE"
+docker compose exec -T postgres pg_dump -U postgres serveis_extraordinaris > "$BACKUP_FILE"
 
 if [ $? -eq 0 ]; then
     # Comprimir

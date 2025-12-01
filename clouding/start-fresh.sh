@@ -59,11 +59,12 @@ echo ""
 
 # 4. Verificar taules
 echo "4️⃣  Verificant taules creades..."
-TABLES=$(docker compose exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -t -c "\dt" | grep -c "public" || echo "0")
+# Usem el superusuari 'postgres' per evitar problemes amb rols
+TABLES=$(docker compose exec -T postgres psql -U postgres -d $POSTGRES_DB -t -c "\dt" | grep -c "public" || echo "0")
 
 if [ "$TABLES" -eq 6 ]; then
     echo "✅ Les 6 taules s'han creat correctament!"
-    docker compose exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -c "\dt"
+    docker compose exec -T postgres psql -U postgres -d $POSTGRES_DB -c "\dt"
 else
     echo "⚠️  Només $TABLES taules creades (esperat: 6)"
     echo "   Verificant logs..."
@@ -77,11 +78,11 @@ echo ""
 echo "5️⃣  Verificant dades seed..."
 echo ""
 echo "Usuaris:"
-docker compose exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -c "SELECT email, nom, rol FROM users;"
+docker compose exec -T postgres psql -U postgres -d $POSTGRES_DB -c "SELECT email, nom, rol FROM users;"
 
 echo ""
 echo "Tipus de serveis:"
-docker compose exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -c "SELECT nom, tipus_remuneracio, tarifa_base FROM tipus_servei LIMIT 5;"
+docker compose exec -T postgres psql -U postgres -d $POSTGRES_DB -c "SELECT nom, tipus_remuneracio, tarifa_base FROM tipus_servei LIMIT 5;"
 
 echo ""
 echo "========================================"

@@ -171,10 +171,7 @@ CREATE TABLE tipus_servei (
         (tipus_remuneracio = 'diners' AND tarifa_base IS NOT NULL AND hores_equivalents IS NULL) OR
         (tipus_remuneracio = 'hores' AND hores_equivalents IS NOT NULL AND tarifa_base IS NULL)
     ),
-    CONSTRAINT hora_fi_posterior CHECK (
-        hora_inici_proposada IS NULL OR hora_fi_proposada IS NULL OR 
-        hora_fi_proposada > hora_inici_proposada
-    ),
+    -- Nota: No validem hora_fi > hora_inici perquè alguns serveis travessen mitjanit (ex: 22:00-06:00)
     CONSTRAINT factor_multiplicador_positiu CHECK (factor_multiplicador > 0)
 );
 
