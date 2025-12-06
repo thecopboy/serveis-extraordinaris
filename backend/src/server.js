@@ -2,6 +2,7 @@ import app from './app.js';
 import { testConnection, closePool } from './config/database.js';
 import logger, { logError } from './utils/logger.js';
 import { validateEnv, config } from './config/env.js';
+import { startTokenCleanupJob } from './jobs/cleanupTokens.js';
 
 // Validar variables d'entorn abans de començar
 try {
@@ -29,6 +30,13 @@ const startServer = async () => {
         environment: process.env.NODE_ENV,
         nodeVersion: process.version,
       }, 'Servidor iniciat correctament');
+      
+      // Iniciar job de neteja de tokens (només en producció)
+      if (process.env.NODE_ENV === 'production') {
+        startTokenCleanupJob();
+      } else {
+        logger.info('Job de neteja de tokens desactivat (només producció)');
+      }
     });
     
     // Gestió de shutdown graciós

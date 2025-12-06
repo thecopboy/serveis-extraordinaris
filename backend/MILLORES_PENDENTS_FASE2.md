@@ -14,7 +14,7 @@
 | 2 | Gestió d'errors inconsistent | 🟠 Mitjana | ✅ **COMPLETAT** |
 | 3 | Manca rate limiting | 🔴 Alta | ✅ **COMPLETAT** |
 | 4 | Logout no valida token | 🟠 Mitjana | ✅ **COMPLETAT** |
-| 5 | Tokens expirats s'acumulen | 🟡 Baixa | ⏳ Pendent |
+| 5 | Tokens expirats s'acumulen | 🟡 Baixa | ✅ **COMPLETAT** |
 | 6 | Logging no estructurat | 🟡 Baixa | ⏳ Pendent |
 | 7 | .env.example incomplet | 🟡 Baixa | ⏳ Pendent |
 | 8 | Manca documentació API | 🟠 Mitjana | ⏳ Pendent |
@@ -212,26 +212,72 @@ async logout(refreshToken) {
 
 ---
 
-## 🟡 5. NETEJA AUTOMÀTICA DE TOKENS
+## ✅ 5. NETEJA AUTOMÀTICA DE TOKENS - **COMPLETAT**
 
 ### Problema
-Tokens expirats s'acumulen a la BD indefinidament.
+Tokens expirats i revocats s'acumulaven a la base de dades indefinidament. Sense mecanisme de neteja automàtica, la taula `refresh_tokens` creixeria constantment afectant el rendiment.
 
-### Solució
+### Solució Implementada
 ```bash
-npm install node-cron
+npm install node-cron  # ✅ Instal·lat
 ```
 
-### Fitxers a crear/modificar
-- ✅ `src/jobs/cleanupTokens.js` - Job amb node-cron
-- ✅ `src/server.js` - Iniciar job en producció
+Job automàtic amb `node-cron` que s'executa cada dia a les 3:00 AM i elimina tokens expirats o revocats.
+
+### Fitxers creats/modificats
+- ✅ `src/jobs/cleanupTokens.js` - Job amb node-cron i funció de neteja
+- ✅ `src/server.js` - Integració del job (només en producció)
+
+### Implementació
+**Job de neteja** (`src/jobs/cleanupTokens.js`):
+```javascript
+export async function cleanupExpiredTokens() {
+  const result = await pool.query(`
+    DELETE FROM refresh_tokens
+    WHERE expira_at < NOW() OR revocat = true
+  `);
+  
+  console.log(`✅ Neteja completada: ${result.rowCount} tokens eliminats`);
+  return result.rowCount;
+}
+
+export function startTokenCleanupJob() {
+  cron.schedule('0 3 * * *', async () => {
+    console.log('🧹 Iniciant neteja automàtica de tokens...');
+    await cleanupExpiredTokens();
+  });
+}
+```
+
+**Integració al servidor** (`src/server.js`):
+```javascript
+if (process.env.NODE_ENV === 'production') {
+  startTokenCleanupJob();
+}
+```
 
 ### Configuració
-- Executar cada dia a les 3:00 AM
-- Cridar `netejar_tokens_expirats()` de PostgreSQL
+- **Schedule**: `'0 3 * * *'` (cada dia a les 3:00 AM)
+- **Variables d'entorn**:
+  - `CLEANUP_SCHEDULE` - Personalitzar horari (opcional)
+  - `CLEANUP_ENABLED` - Activar/desactivar (opcional)
+- **Execució manual**: `node --env-file=.env src/jobs/cleanupTokens.js --run-now`
 
-### Codi complet
-Veure secció "5. NETEJA AUTOMÀTICA" al document de revisió.
+### Tests realitzats
+✅ Test amb 6 tokens (2 vàlids, 3 expirats, 2 revocats) → 4 eliminats  
+✅ Només tokens vàlids i no revocats es mantenen a la BD  
+✅ Execució manual funciona correctament  
+✅ Log automàtic amb nombre de tokens eliminats  
+
+### Beneficis aconseguits
+- 🧹 Base de dades neta: Eliminació automàtica de tokens inútils
+- ⚡ Millor rendiment: Menys registres = queries més ràpides
+- 🔒 Seguretat: Tokens expirats/revocats desapareixen físicament
+- ⏰ Automàtic: No cal intervenció manual
+- 📊 Configurable: Horari personalitzable per variables d'entorn
+- 🔧 Testing fàcil: Opció --run-now per executar manualment
+
+**Data completat**: 6 de desembre de 2025
 
 ---
 
