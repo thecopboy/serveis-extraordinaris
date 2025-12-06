@@ -15,7 +15,7 @@
 | 3 | Manca rate limiting | 🔴 Alta | ✅ **COMPLETAT** |
 | 4 | Logout no valida token | 🟠 Mitjana | ✅ **COMPLETAT** |
 | 5 | Tokens expirats s'acumulen | 🟡 Baixa | ✅ **COMPLETAT** |
-| 6 | Logging no estructurat | 🟡 Baixa | ⏳ Pendent |
+| 6 | Logging no estructurat | 🟡 Baixa | ✅ **COMPLETAT** |
 | 7 | .env.example incomplet | 🟡 Baixa | ⏳ Pendent |
 | 8 | Manca documentació API | 🟠 Mitjana | ⏳ Pendent |
 | 9 | Sense tests unitaris | 🔴 Alta | ⏳ Pendent |
@@ -281,28 +281,67 @@ if (process.env.NODE_ENV === 'production') {
 
 ---
 
-## 🟡 6. LOGGING ESTRUCTURAT
+## ✅ 6. LOGGING ESTRUCTURAT - **COMPLETAT**
 
 ### Problema
-Logs amb `console.log`, difícils de filtrar i analitzar.
+Alguns fitxers encara utilitzaven `console.log/error` en lloc del logger estructurat (Pino), dificultant el filtrat i anàlisi de logs en producció.
 
-### Solució
-```bash
-npm install winston
+### Solució Implementada
+Substituïts tots els `console.log/error/warn` per crides al logger de Pino que ja estava implementat al projecte.
+
+### Fitxers modificats
+- ✅ `src/jobs/cleanupTokens.js` - 11 console.* substituïts per logger
+- ✅ `src/server.js` - 1 console.error substituït per logger.error
+- ✅ `src/middleware/errorHandler.js` - 1 console.error substituït per logError
+
+### Canvis implementats
+**ABANS** (console.log):
+```javascript
+console.log(`✅ Neteja completada: ${count} tokens eliminats`);
+console.error('❌ Error en la neteja:', error.message);
 ```
 
-### Fitxers a crear/modificar
-- ✅ `src/utils/logger.js` - Logger amb Winston
-- ✅ `.gitignore` - Afegir `logs/`
-- ✅ Tots els controllers - Usar logger en lloc de console.log
+**DESPRÉS** (Pino estructurat):
+```javascript
+logger.info({ tokensDeleted: count }, 'Neteja de tokens completada');
+logger.error({ error: error.message, stack: error.stack }, 'Error en la neteja de tokens');
+```
 
-### Configuració
-- Logs a fitxers: `logs/error.log`, `logs/combined.log`
-- Format JSON per producció
-- Format coloritzat per desenvolupament
+**Desenvolupament** (pino-pretty):
+```
+[02:20:44.044] INFO: Neteja de tokens completada
+    tokensDeleted: 2
+```
 
-### Codi complet
-Veure secció "6. LOGGING" al document de revisió.
+**Producció** (JSON):
+```json
+{"level":"info","time":"2025-12-06T02:20:44.044Z","tokensDeleted":2,"msg":"Neteja de tokens completada"}
+```
+
+### Logger ja implementat (Pino)
+El projecte ja tenia **Pino** configurat correctament:
+- ✅ Format JSON en producció (fàcil de parsejar)
+- ✅ Format coloritzat en desenvolupament (pino-pretty)
+- ✅ Nivells configurables: `LOG_LEVEL` (trace/debug/info/warn/error/fatal)
+- ✅ Helpers: `logRequest()`, `logQuery()`, `logError()`
+- ✅ Context automàtic: timestamps, nivells, metadata estructurada
+
+### Tests realitzats
+✅ Neteja manual amb logging estructurat: 2 tokens eliminats  
+✅ Format correcte en desenvolupament (pino-pretty amb colors)  
+✅ Metadata estructurada: `{ tokensDeleted: 2 }`  
+✅ Cap `console.log` restant al codi (`grep` retorna 0 resultats)  
+
+### Beneficis aconseguits
+- 📊 **100% logging estructurat**: Tot el codi usa Pino
+- 🔍 **Fàcil cerca**: Logs en JSON parseables
+- 🎯 **Context ric**: Metadata estructurada (no strings concatenats)
+- ⚡ **Millor rendiment**: Pino és 5-10x més ràpid que console.log
+- 🎨 **Desenvolupament agradable**: pino-pretty amb colors
+- 📈 **Integració externa**: Compatible amb ELK, Datadog, CloudWatch, etc.
+- 🔧 **Filtrable**: Per nivell (info/error/warn) i per camp
+
+**Data completat**: 6 de desembre de 2025
 
 ---
 

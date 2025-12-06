@@ -34,8 +34,7 @@ export const errorHandler = (err, req, res, next) => {
   if (error.isOperational) {
     logError(error, logContext);
   } else {
-    console.error('💥 Error no controlat:', err);
-    logError(err, { ...logContext, isOperational: false });
+    logError(err, { ...logContext, isOperational: false, unhandled: true });
   }
   
   // Preparar resposta

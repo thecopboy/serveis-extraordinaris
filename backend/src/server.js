@@ -9,7 +9,7 @@ try {
   validateEnv();
   logger.info('Variables d\'entorn validades correctament');
 } catch (error) {
-  console.error('❌ Error validant variables d\'entorn:', error.message);
+  logger.error({ error: error.message }, 'Error validant variables d\'entorn');
   process.exit(1);
 }
 
