@@ -156,7 +156,13 @@ class AuthService {
    * @returns {Promise<boolean>}
    */
   async logout(refreshToken) {
-    return await refreshTokenRepository.revokeToken(refreshToken);
+    const revoked = await refreshTokenRepository.revokeToken(refreshToken);
+    
+    if (!revoked) {
+      throw new NotFoundError('Token');
+    }
+    
+    return true;
   }
 
   /**

@@ -13,7 +13,7 @@
 | 1 | Validació d'input inexistent | 🔴 Alta | ✅ **COMPLETAT** |
 | 2 | Gestió d'errors inconsistent | 🟠 Mitjana | ✅ **COMPLETAT** |
 | 3 | Manca rate limiting | 🔴 Alta | ✅ **COMPLETAT** |
-| 4 | Logout no valida token | 🟠 Mitjana | ⏳ Pendent |
+| 4 | Logout no valida token | 🟠 Mitjana | ✅ **COMPLETAT** |
 | 5 | Tokens expirats s'acumulen | 🟡 Baixa | ⏳ Pendent |
 | 6 | Logging no estructurat | 🟡 Baixa | ⏳ Pendent |
 | 7 | .env.example incomplet | 🟡 Baixa | ⏳ Pendent |
@@ -154,20 +154,61 @@ npm install express-rate-limit  # ✅ Instal·lat
 
 ---
 
-## 🟠 4. VALIDACIÓ DE LOGOUT
+## ✅ 4. VALIDACIÓ DE LOGOUT - **COMPLETAT**
 
 ### Problema
-El logout accepta qualsevol string sense verificar si el token existeix.
+El logout acceptava qualsevol string sense verificar si el token existeix a la base de dades o ja estava revocat. Això permetia fer logout amb tokens inventats sense cap error.
 
-### Solució
-Modificar `revokeToken()` per retornar `boolean` i validar al controller.
+### Solució Implementada
+Modificat `revokeToken()` per retornar boolean i validar al servei si el token existeix i no està revocat.
 
-### Fitxers a modificar
-- ✅ `src/repositories/refreshTokenRepository.js` - Retornar boolean
-- ✅ `src/controllers/authController.js` - Validar resposta
+### Fitxers modificats
+- ✅ `src/repositories/refreshTokenRepository.js` - Modificat revokeToken() per retornar boolean
+- ✅ `src/services/authService.js` - Validar resposta i llançar NotFoundError si falla
+- ✅ `src/utils/errors.js` - Traduït NotFoundError a català ("no trobat")
 
-### Codi complet
-Veure secció "4. VALIDACIÓ DE LOGOUT" al document de revisió.
+### Canvis implementats
+**Repository** (`refreshTokenRepository.js`):
+```javascript
+async revokeToken(token) {
+  const query = `
+    UPDATE refresh_tokens
+    SET revocat = true
+    WHERE token = $1 AND revocat = false
+    RETURNING id
+  `;
+
+  const result = await pool.query(query, [token]);
+  return result.rowCount > 0;  // true si s'ha revocat, false si no existeix o ja estava revocat
+}
+```
+
+**Service** (`authService.js`):
+```javascript
+async logout(refreshToken) {
+  const revoked = await refreshTokenRepository.revokeToken(refreshToken);
+  
+  if (!revoked) {
+    throw new NotFoundError('Token');  // 404: Token no trobat
+  }
+  
+  return true;
+}
+```
+
+### Tests realitzats
+✅ Logout amb token vàlid → 200 Success amb "Logout correcte"  
+✅ Logout amb token ja revocat → 404 amb "Token no trobat"  
+✅ Logout amb token inventat → 404 amb "Token no trobat"  
+
+### Beneficis aconseguits
+- 🔒 Seguretat millorada: No es pot fer logout amb tokens falsos
+- 🎯 Validació correcta: Només tokens vàlids i no revocats poden ser revocats
+- 📊 Errors clars: Codi 404 amb missatge informatiu
+- 🧹 Codi més net: WHERE revocat = false evita dobles revocacions
+- 🌍 Missatges en català: NotFoundError ara retorna "no trobat"
+
+**Data completat**: 6 de desembre de 2025
 
 ---
 

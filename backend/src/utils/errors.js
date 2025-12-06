@@ -31,8 +31,8 @@ export class ForbiddenError extends AppError {
 
 // 404 - Not Found
 export class NotFoundError extends AppError {
-  constructor(resource = 'Resource') {
-    super(`${resource} not found`, 404);
+  constructor(resource = 'Recurs') {
+    super(`${resource} no trobat`, 404);
   }
 }
 

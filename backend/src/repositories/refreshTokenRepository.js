@@ -49,13 +49,13 @@ class RefreshTokenRepository {
   /**
    * Revocar token
    * @param {string} token 
-   * @returns {Promise<boolean>}
+   * @returns {Promise<boolean>} true si s'ha revocat, false si no existia o ja estava revocat
    */
   async revokeToken(token) {
     const query = `
       UPDATE refresh_tokens
-      SET revocat = true, revocat_a = CURRENT_TIMESTAMP
-      WHERE token = $1
+      SET revocat = true
+      WHERE token = $1 AND revocat = false
       RETURNING id
     `;
 
