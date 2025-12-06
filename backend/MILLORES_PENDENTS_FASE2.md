@@ -12,7 +12,7 @@
 |---|----------|-----------|-------|
 | 1 | Validació d'input inexistent | 🔴 Alta | ✅ **COMPLETAT** |
 | 2 | Gestió d'errors inconsistent | 🟠 Mitjana | ✅ **COMPLETAT** |
-| 3 | Manca rate limiting | 🔴 Alta | ⏳ Pendent |
+| 3 | Manca rate limiting | 🔴 Alta | ✅ **COMPLETAT** |
 | 4 | Logout no valida token | 🟠 Mitjana | ⏳ Pendent |
 | 5 | Tokens expirats s'acumulen | 🟡 Baixa | ⏳ Pendent |
 | 6 | Logging no estructurat | 🟡 Baixa | ⏳ Pendent |
@@ -117,26 +117,40 @@ async register(req, res, next) {
 
 ---
 
-## 🔴 3. RATE LIMITING
+## ✅ 3. RATE LIMITING - **COMPLETAT**
 
 ### Problema
 No hi ha protecció contra brute force attacks al login/register.
 
-### Solució
+### Solució Implementada
 ```bash
-npm install express-rate-limit
+npm install express-rate-limit  # ✅ Instal·lat
 ```
 
-### Fitxers a crear/modificar
-- ✅ `src/middleware/rateLimiter.js` - 3 rate limiters
-  - `loginLimiter`: 5 intents / 15 minuts
-  - `registerLimiter`: 3 registres / 1 hora
-  - `apiLimiter`: 100 peticions / 15 minuts
-- ✅ `src/routes/authRoutes.js` - Afegir limiters
-- ✅ `src/app.js` - Rate limiter global
+### Fitxers creats/modificats
+- ✅ `src/middleware/rateLimiter.js` - 3 rate limiters (loginLimiter, registerLimiter, apiLimiter)
+- ✅ `src/routes/authRoutes.js` - Limiters integrats a /register i /login
+- ✅ `src/app.js` - Rate limiter global per /api/*
 
-### Codi complet
-Veure secció "3. RATE LIMITING" al document de revisió.
+### Configuració implementada
+- **loginLimiter**: Màxim 5 intents / 15 minuts (brute force protection)
+- **registerLimiter**: Màxim 3 registres / 1 hora (spam protection)
+- **apiLimiter**: Màxim 100 peticions / 15 minuts (DoS protection)
+
+### Tests realitzats
+✅ Login: Intent 6 blocat amb 429 després de 5 intents fallits  
+✅ Missatge clar: "Massa intents de login. Prova-ho de nou en 15 minuts."  
+✅ Headers RateLimit-* correctes (Limit, Remaining, Reset)  
+✅ Logging automàtic amb IP i endpoint  
+
+### Beneficis aconseguits
+- 🛡️ Protecció contra brute force: Impossible provar >5 contrasenyes en 15min
+- 🚫 Prevenció de spam: Limita creació massiva de comptes
+- ⚡ Protecció DoS: Limita peticions globals a l'API
+- 📊 Transparència: Headers informatius per al client
+- 📝 Traçabilitat: Logging automàtic de cada bloqueig
+
+**Data completat**: 6 de desembre de 2025
 
 ---
 

@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import logger from './utils/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { requestId } from './middleware/requestId.js';
+import { apiLimiter } from './middleware/rateLimiter.js';
 import { config } from './config/env.js';
 
 const app = express();
@@ -23,6 +24,9 @@ app.use(cors({
 // Parsing de JSON i URL-encoded
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Rate limiter global per tota l'API (aplicat DESPRÉS del parsing)
+app.use('/api/', apiLimiter);
 
 // Adjuntar logger a cada petició
 app.use((req, res, next) => {

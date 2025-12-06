@@ -8,6 +8,7 @@ import {
   validateRefresh, 
   validateLogout 
 } from '../middleware/validators.js';
+import { loginLimiter, registerLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
@@ -16,14 +17,14 @@ const router = express.Router();
  * @desc    Registrar nou usuari
  * @access  Public
  */
-router.post('/register', validateRegister, asyncHandler(authController.register));
+router.post('/register', registerLimiter, validateRegister, asyncHandler(authController.register));
 
 /**
  * @route   POST /api/v1/auth/login
  * @desc    Login d'usuari (retorna access + refresh token)
  * @access  Public
  */
-router.post('/login', validateLogin, asyncHandler(authController.login));
+router.post('/login', loginLimiter, validateLogin, asyncHandler(authController.login));
 
 /**
  * @route   POST /api/v1/auth/refresh
