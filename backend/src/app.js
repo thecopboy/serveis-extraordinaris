@@ -24,6 +24,12 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Adjuntar logger a cada petició
+app.use((req, res, next) => {
+  req.log = logger;
+  next();
+});
+
 // Logger personalitzat per peticions HTTP
 app.use((req, res, next) => {
   const start = Date.now();

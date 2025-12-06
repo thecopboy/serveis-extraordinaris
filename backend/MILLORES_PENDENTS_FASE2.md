@@ -1,7 +1,8 @@
 # 🔧 MILLORES PENDENTS - FASE 2: Autenticació JWT
 
 **Data**: 1 de desembre de 2025  
-**Estat**: Pendent d'implementació
+**Actualitzat**: 6 de desembre de 2025  
+**Estat**: En implementació
 
 ---
 
@@ -9,8 +10,8 @@
 
 | # | Problema | Severitat | Estat |
 |---|----------|-----------|-------|
-| 1 | Validació d'input inexistent | 🔴 Alta | ⏳ Pendent |
-| 2 | Gestió d'errors inconsistent | 🟠 Mitjana | ⏳ Pendent |
+| 1 | Validació d'input inexistent | 🔴 Alta | ✅ **COMPLETAT** |
+| 2 | Gestió d'errors inconsistent | 🟠 Mitjana | ✅ **COMPLETAT** |
 | 3 | Manca rate limiting | 🔴 Alta | ⏳ Pendent |
 | 4 | Logout no valida token | 🟠 Mitjana | ⏳ Pendent |
 | 5 | Tokens expirats s'acumulen | 🟡 Baixa | ⏳ Pendent |
@@ -22,51 +23,97 @@
 
 ---
 
-## 🔴 1. VALIDACIÓ D'INPUT
+## ✅ 1. VALIDACIÓ D'INPUT - **COMPLETAT**
 
 ### Problema
 Cap endpoint valida les dades d'entrada. Risc d'injeccions SQL, dades inconsistents i crashes.
 
-### Solució
+### Solució Implementada
 ```bash
-npm install express-validator
+npm install express-validator  # ✅ Instal·lat
 ```
 
-### Fitxers a crear/modificar
+### Fitxers creats/modificats
 - ✅ `src/middleware/validators.js` - Validadors per cada endpoint
-- ✅ `src/routes/authRoutes.js` - Afegir validadors a les rutes
+- ✅ `src/routes/authRoutes.js` - Validadors integrats a les rutes
+- ✅ `src/app.js` - Logger adjuntat a req
+- ✅ `AUTH_EXAMPLES.md` - Documentació actualitzada amb validacions
+- ✅ `schema.sql` - Camps opcionals (cognom_1, numero_professional)
 
-### Validacions necessàries
-- **Register**: nom, email (format), password (min 8 chars, complexitat), rol
-- **Login**: email, password obligatoris
-- **Refresh**: refreshToken format JWT
+### Validacions implementades
+- **Register**: 
+  - nom (2-100 caràcters, obligatori)
+  - email (format vàlid, màxim 255 caràcters)
+  - password (mínim 8 caràcters, 1 majúscula, 1 minúscula, 1 número, 1 especial)
+  - rol (valors: admin/tecnic/usuari)
+- **Login**: email i password obligatoris i format vàlid
+- **Refresh**: refreshToken obligatori amb longitud mínima
+- **Logout**: refreshToken obligatori amb longitud mínima
 
-### Codi complet
-Veure secció "1. VALIDACIÓ D'INPUT" al document de revisió.
+### Tests realitzats
+✅ Dades invàlides rebutjades amb missatges clars  
+✅ Dades vàlides acceptades i processades correctament  
+✅ Errors 400 amb format consistent  
+
+**Data completat**: 6 de desembre de 2025
 
 ---
 
-## 🔴 2. GESTIÓ D'ERRORS CENTRALITZADA
+## ✅ 2. GESTIÓ D'ERRORS CENTRALITZADA - **COMPLETAT**
 
 ### Problema
-Errors gestionats diferent a cada capa, dificultat per debugar.
+Errors gestionats diferent a cada capa (try-catch a cada controller), dificultat per debugar, formats inconsistents.
 
-### Solució
-Crear middleware `errorHandler` que gestioni tots els errors de manera consistent.
+### Solució Implementada
+Refactoritzat tot el codi per usar el middleware `errorHandler` centralitzat que ja existia.
 
-### Fitxers a crear/modificar
-- ✅ `src/middleware/errorHandler.js` - Middleware centralitzat
-- ✅ `src/app.js` - Registrar errorHandler al final
-- ✅ Tots els controllers - Usar `next(error)` en lloc de `res.status().json()`
+### Fitxers modificats
+- ✅ `src/services/authService.js` - Usa AppError (ConflictError, UnauthorizedError, ForbiddenError, NotFoundError)
+- ✅ `src/controllers/authController.js` - Eliminats tots els try-catch, codi reduït de 229 a 116 línies
+- ✅ `src/middleware/auth.js` - Usa asyncHandler i AppError
+- ✅ `src/routes/authRoutes.js` - Tots els endpoints wrappejats amb asyncHandler
+- ✅ `src/repositories/userRepository.js` - Corregits noms de columnes (data_registre_inicial, updated_at)
 
-### Errors a gestionar
-- JWT errors (TokenExpiredError, JsonWebTokenError)
-- BD errors (23505 - unique constraint)
-- Errors de negoci (EMAIL_ALREADY_EXISTS, INVALID_CREDENTIALS)
-- Errors genèrics (500)
+### Canvis implementats
+**ABANS** (cada controller):
+```javascript
+async register(req, res) {
+  try {
+    // ... codi ...
+  } catch (error) {
+    if (error.message === 'EMAIL_ALREADY_EXISTS') {
+      return res.status(409).json({ error: 'EMAIL_EXISTS', ... });
+    }
+    // ... més gestió manual ...
+  }
+}
+```
 
-### Codi complet
-Veure secció "2. GESTIÓ D'ERRORS" al document de revisió.
+**DESPRÉS** (molt més net):
+```javascript
+async register(req, res, next) {
+  const userData = req.body;
+  const user = await authService.register(userData);
+  res.status(201).json({ success: true, data: user });
+  // Si hi ha error, asyncHandler ho captura i envia a errorHandler
+}
+```
+
+### Tests realitzats
+✅ Email duplicat → 409 Conflict amb missatge consistent  
+✅ Login amb contrasenya incorrecta → 401 Unauthorized  
+✅ Accés sense token → 401 Unauthorized  
+✅ Format consistent a totes les respostes d'error  
+✅ Logging automàtic amb context complet  
+
+### Beneficis aconseguits
+- 📉 Codi reduït: authController.js de 229 → 116 línies (-49%)
+- 🎯 Format consistent: Totes les respostes d'error segueixen el mateix patró
+- 🔍 Logging automàtic: errorHandler fa log amb requestId, body, params, etc.
+- 🛡️ Més segur: Si t'oblides d'un try-catch, asyncHandler ho captura
+- 🧹 Més net: Controllers són funcions curtes i llegibles
+
+**Data completat**: 6 de desembre de 2025
 
 ---
 

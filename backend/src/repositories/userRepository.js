@@ -15,7 +15,7 @@ class UserRepository {
         id, nom, cognom_1, cognom_2, pseudonim,
         numero_professional, departament, email,
         password_hash, rol, actiu,
-        creat_a, actualitzat_a
+        data_registre_inicial, updated_at
       FROM users
       WHERE id = $1 AND actiu = true
     `;
@@ -35,7 +35,7 @@ class UserRepository {
         id, nom, cognom_1, cognom_2, pseudonim,
         numero_professional, departament, email,
         password_hash, rol, actiu,
-        creat_a, actualitzat_a
+        data_registre_inicial, updated_at
       FROM users
       WHERE email = $1
     `;
@@ -71,7 +71,7 @@ class UserRepository {
       RETURNING 
         id, nom, cognom_1, cognom_2, pseudonim,
         numero_professional, departament, email,
-        rol, actiu, creat_a
+        rol, actiu, data_registre_inicial
     `;
 
     const values = [

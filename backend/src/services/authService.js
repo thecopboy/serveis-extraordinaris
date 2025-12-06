@@ -2,6 +2,12 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import userRepository from '../repositories/userRepository.js';
 import refreshTokenRepository from '../repositories/refreshTokenRepository.js';
+import { 
+  ConflictError, 
+  UnauthorizedError, 
+  ForbiddenError, 
+  NotFoundError 
+} from '../utils/errors.js';
 
 const {
   JWT_SECRET,
@@ -25,7 +31,7 @@ class AuthService {
     // Verificar si l'email ja existeix
     const emailInUse = await userRepository.emailExists(email);
     if (emailInUse) {
-      throw new Error('EMAIL_ALREADY_EXISTS');
+      throw new ConflictError('Aquest email ja està registrat');
     }
 
     // Hash password
@@ -57,18 +63,18 @@ class AuthService {
     const user = await userRepository.getUserByEmail(email);
     
     if (!user) {
-      throw new Error('INVALID_CREDENTIALS');
+      throw new UnauthorizedError('Email o contrasenya incorrectes');
     }
 
     if (!user.actiu) {
-      throw new Error('USER_DEACTIVATED');
+      throw new ForbiddenError('Aquest usuari està desactivat');
     }
 
     // Verificar password
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
     
     if (!isValidPassword) {
-      throw new Error('INVALID_CREDENTIALS');
+      throw new UnauthorizedError('Email o contrasenya incorrectes');
     }
 
     // Generar tokens
@@ -108,7 +114,7 @@ class AuthService {
     const tokenData = await refreshTokenRepository.getTokenByValue(refreshToken);
     
     if (!tokenData) {
-      throw new Error('INVALID_REFRESH_TOKEN');
+      throw new UnauthorizedError('Refresh token invàlid o expirat');
     }
 
     // Verificar JWT
@@ -117,14 +123,14 @@ class AuthService {
     } catch (error) {
       // Revocar token si és invàlid
       await refreshTokenRepository.revokeToken(refreshToken);
-      throw new Error('INVALID_REFRESH_TOKEN');
+      throw new UnauthorizedError('Refresh token invàlid o expirat');
     }
 
     // Obtenir usuari
     const user = await userRepository.getUserById(tokenData.usuari_id);
     
     if (!user || !user.actiu) {
-      throw new Error('USER_NOT_FOUND');
+      throw new NotFoundError('Usuari');
     }
 
     // Generar nou access token
@@ -206,7 +212,7 @@ class AuthService {
     try {
       return jwt.verify(token, JWT_SECRET);
     } catch (error) {
-      throw new Error('INVALID_ACCESS_TOKEN');
+      throw new UnauthorizedError('Token d\'accés invàlid o expirat');
     }
   }
 

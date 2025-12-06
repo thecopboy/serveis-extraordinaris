@@ -22,12 +22,12 @@ CREATE TABLE users (
     
     -- Dades personals
     nom VARCHAR(100) NOT NULL,
-    cognom_1 VARCHAR(100) NOT NULL,
+    cognom_1 VARCHAR(100),
     cognom_2 VARCHAR(100),
     pseudonim VARCHAR(50) UNIQUE,
     
     -- Dades professionals
-    numero_professional VARCHAR(50) NOT NULL,
+    numero_professional VARCHAR(50),
     departament VARCHAR(100),
     
     -- Autenticació

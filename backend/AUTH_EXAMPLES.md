@@ -11,7 +11,26 @@ http://localhost:5000/api/v1
 
 **Endpoint**: `POST /api/v1/auth/register`
 
-**Body**:
+### Validacions
+- **nom**: Obligatori, 2-100 caràcters
+- **email**: Obligatori, format vàlid, màxim 255 caràcters
+- **password**: Obligatori, mínim 8 caràcters, ha de contenir:
+  - Almenys 1 majúscula
+  - Almenys 1 minúscula
+  - Almenys 1 número
+  - Almenys 1 caràcter especial (!@#$%^&*)
+- **rol**: Opcional, valors permesos: 'admin', 'tecnic', 'usuari'
+
+### Body Mínim:
+```json
+{
+  "nom": "Maria García",
+  "email": "maria@exemple.cat",
+  "password": "SecurePass123!"
+}
+```
+
+### Body Complet (opcional):
 ```json
 {
   "nom": "Maria",
@@ -26,7 +45,7 @@ http://localhost:5000/api/v1
 }
 ```
 
-**Response** (201):
+**Response Èxit** (201):
 ```json
 {
   "success": true,
@@ -37,9 +56,30 @@ http://localhost:5000/api/v1
     "email": "maria@exemple.cat",
     "rol": "treballador",
     "actiu": true,
-    "creat_a": "2025-12-01T03:30:00.000Z"
+    "data_registre_inicial": "2025-12-01T03:30:00.000Z"
   },
   "message": "Usuari creat correctament"
+}
+```
+
+**Response Error Validació** (400):
+```json
+{
+  "success": false,
+  "errors": [
+    {
+      "field": "nom",
+      "message": "El nom ha de tenir entre 2 i 100 caràcters"
+    },
+    {
+      "field": "email",
+      "message": "L'email no és vàlid"
+    },
+    {
+      "field": "password",
+      "message": "La contrasenya ha de tenir almenys 8 caràcters"
+    }
+  ]
 }
 ```
 
@@ -48,11 +88,9 @@ http://localhost:5000/api/v1
 curl -X POST http://localhost:5000/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{
-    "nom": "Maria",
-    "cognom_1": "García",
+    "nom": "Maria García",
     "email": "maria@exemple.cat",
-    "password": "SecurePassword123!",
-    "rol": "treballador"
+    "password": "SecurePass123!"
   }'
 ```
 
@@ -61,6 +99,10 @@ curl -X POST http://localhost:5000/api/v1/auth/register \
 ## 2. Login
 
 **Endpoint**: `POST /api/v1/auth/login`
+
+### Validacions
+- **email**: Obligatori, format vàlid
+- **password**: Obligatori
 
 **Body**:
 ```json
