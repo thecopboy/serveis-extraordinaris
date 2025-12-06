@@ -16,7 +16,7 @@
 | 4 | Logout no valida token | 🟠 Mitjana | ✅ **COMPLETAT** |
 | 5 | Tokens expirats s'acumulen | 🟡 Baixa | ✅ **COMPLETAT** |
 | 6 | Logging no estructurat | 🟡 Baixa | ✅ **COMPLETAT** |
-| 7 | .env.example incomplet | 🟡 Baixa | ⏳ Pendent |
+| 7 | .env.example incomplet | 🟡 Baixa | ✅ **COMPLETAT** |
 | 8 | Manca documentació API | 🟠 Mitjana | ⏳ Pendent |
 | 9 | Sense tests unitaris | 🔴 Alta | ⏳ Pendent |
 | 10 | CORS mal configurat | 🟠 Mitjana | ⏳ Pendent |
@@ -345,21 +345,121 @@ El projecte ja tenia **Pino** configurat correctament:
 
 ---
 
-## 🟡 7. ACTUALITZAR .env.example
+## ✅ 7. ACTUALITZAR .env.example - **COMPLETAT**
 
 ### Problema
-Fitxer .env.example incomplet, falten variables necessàries.
+El fitxer `.env.example` estava incomplet i sense documentació adequada. Faltaven variables noves (CLEANUP_*), comentaris explicatius i instruccions per configurar l'entorn.
 
-### Solució
-Actualitzar amb totes les variables necessàries i comentaris explicatius.
+### Solució Implementada
+Creat un `.env.example` complet, ben documentat i organitzat per seccions amb comentaris detallats, exemples i instruccions de seguretat.
 
-### Variables a afegir
-- `ALLOWED_ORIGINS` - Per CORS
-- `LOG_LEVEL` - Per Winston
-- Comentaris amb exemples
+### Fitxers modificats
+- ✅ `.env.example` - Reescrit completament amb documentació extensa
+- ✅ `.env` - Corregit `JWT_EXPIRES_IN` → `JWT_ACCESS_EXPIRES_IN` i afegides variables noves
 
-### Codi complet
-Veure secció "7. .ENV.EXAMPLE" al document de revisió.
+### Estructura del nou .env.example
+```bash
+# =============================================================================
+# SERVEIS EXTRAORDINARIS - CONFIGURACIÓ D'ENTORN
+# =============================================================================
+
+# ENTORN D'EXECUCIÓ
+NODE_ENV=development  # development | production | test
+
+# SERVIDOR
+PORT=5000
+HOST=localhost  # 0.0.0.0 en producció
+
+# BASE DE DADES
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=serveis_user
+DB_PASSWORD=ChangeMeInProduction!
+DB_NAME=serveis_extraordinaris
+
+# JWT
+JWT_SECRET=your-secret-here  # openssl rand -base64 32
+JWT_REFRESH_SECRET=your-refresh-secret-here
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
+
+# CORS
+CORS_ORIGIN=http://localhost:3000
+
+# LOGGING
+LOG_LEVEL=debug  # trace|debug|info|warn|error|fatal
+
+# JOBS PROGRAMATS
+CLEANUP_SCHEDULE=0 3 * * *  # Cada dia a les 3:00 AM
+CLEANUP_ENABLED=true
+```
+
+### Variables afegides
+1. **CLEANUP_SCHEDULE** - Horari del job de neteja (sintaxi cron)
+2. **CLEANUP_ENABLED** - Activar/desactivar job de neteja
+
+### Variables corregides
+- **JWT_EXPIRES_IN** → **JWT_ACCESS_EXPIRES_IN** (nom correcte segons el codi)
+
+### Millores implementades
+
+**1. Organització per seccions:**
+- Entorn d'execució
+- Configuració del servidor
+- Base de dades
+- Autenticació JWT
+- CORS
+- Logging
+- Jobs programats
+- Notes addicionals
+
+**2. Comentaris detallats:**
+- Què fa cada variable
+- Valors permesos
+- Exemples realistes
+- Recomanacions per producció
+
+**3. Instruccions de seguretat:**
+- Com generar secrets JWT: `openssl rand -base64 32`
+- Warnings sobre contrasenyes
+- Recordatoris de canviar valors en producció
+- Guia de primer desplegament
+
+**4. Exemples pràctics:**
+- Format cron amb guia visual
+- Múltiples origins per CORS
+- Diferents configuracions development/production
+
+**5. Documentació inline:**
+```bash
+# Horari del job de neteja de tokens expirats/revocats
+# Format cron: minut hora dia mes dia_setmana
+# 
+# Exemples:
+#   '0 3 * * *'    → Cada dia a les 3:00 AM (recomanat)
+#   '0 */6 * * *'  → Cada 6 hores
+#   '*/30 * * * *' → Cada 30 minuts (només per testing)
+# 
+# Guia ràpida:
+#   ┌─────── minut (0-59)
+#   │ ┌───── hora (0-23)
+#   │ │ ┌─── dia del mes (1-31)
+#   │ │ │ ┌─ mes (1-12)
+#   │ │ │ │ ┌ dia de la setmana (0-7)
+#   * * * * *
+CLEANUP_SCHEDULE=0 3 * * *
+```
+
+### Beneficis aconseguits
+- 📚 **Documentació viva**: El .env.example és documentació completa
+- 🚀 **Onboarding ràpid**: Nous desenvolupadors configuren tot en 5 minuts
+- 🔒 **Seguretat**: Warnings i instruccions eviten errors de configuració
+- ✅ **Complet**: Totes les variables usades pel codi documentades
+- 🎯 **Exemples**: Valors d'exemple realistes i funcionals
+- 🛡️ **Millors pràctiques**: Guies de producció i seguretat
+- 📄 **Mantenible**: Fàcil afegir noves variables seguint el format
+
+**Data completat**: 6 de desembre de 2025
 
 ---
 
