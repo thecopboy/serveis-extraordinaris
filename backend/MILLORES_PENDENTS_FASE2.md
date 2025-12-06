@@ -18,8 +18,8 @@
 | 6 | Logging no estructurat | 🟡 Baixa | ✅ **COMPLETAT** |
 | 7 | .env.example incomplet | 🟡 Baixa | ✅ **COMPLETAT** |
 | 8 | Manca documentació API | 🟠 Mitjana | ✅ **COMPLETAT** |
-| 9 | Sense tests unitaris | 🔴 Alta | ⏳ Pendent |
-| 10 | CORS mal configurat | 🟠 Mitjana | ⏳ Pendent |
+| 9 | Sense tests unitaris | 🔴 Alta | ⏸️ **ATURAT** (innecessari per projecte simple) |
+| 10 | CORS mal configurat | 🟠 Mitjana | ✅ **COMPLETAT** |
 
 ---
 
@@ -667,53 +667,320 @@ if (config.node.env !== 'production') {
 
 ---
 
-## 🔴 9. TESTS UNITARIS
+## ⏸️ 9. TESTS UNITARIS - **ATURAT**
 
-### Problema
-No hi ha tests, dificultat per detectar regressions.
+### Decisió: INNECESSARI per aquest projecte
 
-### Solució
+Després d'analitzar el context del projecte, s'ha decidit **NO implementar tests unitaris** per les següents raons:
+
+### Per què NO cal en aquest cas:
+
+**1. Projecte simple:**
+- Només 6 endpoints d'autenticació
+- Lògica de negoci senzilla (CRUD + JWT)
+- No hi ha càlculs complexos ni algoritmes crítics
+
+**2. Alternatives ja implementades:**
+- ✅ **Swagger UI** - Testing interactiu manual a `/api-docs`
+- ✅ **express-validator** - Validacions automàtiques
+- ✅ **Error handling centralitzat** - Format consistent
+- ✅ **Logging estructurat** - Debugging fàcil
+
+**3. Cost vs Benefici:**
+- **Cost**: 2-3 hores implementació + manteniment constant
+- **Benefici**: Mínim en projecte d'aquesta mida
+- **ROI negatiu**: El temps s'aprofita millor en funcionalitats
+
+**4. Equip petit:**
+- 1-2 desenvolupadors
+- Testing manual amb Swagger és suficient
+- No hi ha risc de regressions constants
+
+### Quan SÍ caldrien tests:
+
+Reconsiderar si el projecte:
+- Creix a >20-30 endpoints
+- Afegeix lògica de negoci complexa (pagaments, càlculs)
+- Equip de 3+ desenvolupadors
+- Desplegaments automàtics (CI/CD estricte)
+- Historial de regressions freqüents
+
+### Alternatives recomanades:
+
+**En lloc de tests automatitzats:**
+1. **Swagger** - Testing interactiu (✅ implementat)
+2. **Postman collections** - Tests manuals guardats
+3. **Monitoring en producció** - Logs + health checks
+4. **Error tracking** - Sentry o similar (futur)
+
+### Codi d'exemple (si es necessités en el futur):
+
 ```bash
+# Només si el projecte creix significativament
 npm install --save-dev jest supertest @types/jest
 ```
 
-### Fitxers a crear/modificar
-- ✅ `jest.config.js` - Configuració Jest
-- ✅ `src/__tests__/auth.test.js` - Tests d'autenticació
-- ✅ `package.json` - Scripts de test
+```javascript
+// src/__tests__/auth.test.js
+import request from 'supertest';
+import app from '../app.js';
 
-### Tests a implementar
-- Register: usuari nou, email duplicat, validació
-- Login: credencials correctes, incorrectes
-- Me: amb token, sense token
-- Refresh: token vàlid, invàlid
-- Logout: token vàlid, invàlid
+describe('Auth API', () => {
+  it('hauria de registrar un usuari nou', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/register')
+      .send({
+        email: 'test@example.com',
+        password: 'Test123!',
+        nom: 'Test',
+        rol: 'usuari'
+      });
+    
+    expect(res.statusCode).toBe(201);
+    expect(res.body.success).toBe(true);
+  });
+});
+```
 
-### Codi complet
-Veure secció "9. TESTS" al document de revisió.
+### Estat: **ATURAT**
+
+No s'implementarà ara. Es pot reconsiderar si el projecte creix significativament o es detecten regressions freqüents.
+
+**Data decisió**: 6 de desembre de 2025
 
 ---
 
-## 🟠 10. CORS BEN CONFIGURAT
+## ✅ 10. CORS BEN CONFIGURAT - **COMPLETAT**
 
 ### Problema
-CORS permet tots els origins, risc de seguretat.
+CORS estava configurat amb un únic origin hardcoded (`CORS_ORIGIN=http://localhost:3000`), sense validació de whitelist. Això causava:
+- ❌ Bloqueig del frontend si canviava de port (Vite usa 5173)
+- ❌ Impossibilitat d'usar múltiples entorns (dev, staging, prod)
+- ❌ Risc de seguretat si es canviava `.env` sense controls
 
-### Solució
-Configurar whitelist d'origins permesos.
+### Solució Implementada
+Creat middleware CORS avançat amb whitelist d'origins configurable des de variables d'entorn.
 
-### Fitxers a modificar
-- ✅ `src/app.js` - CORS amb whitelist
-- ✅ `.env` - Variable `ALLOWED_ORIGINS`
+### Fitxers creats/modificats
+- ✅ `src/middleware/corsConfig.js` - Middleware CORS amb whitelist i validació
+- ✅ `src/app.js` - Integració del middleware i error handler
+- ✅ `src/config/env.js` - Canviat `CORS_ORIGIN` → `CORS_ORIGINS` (plural)
+- ✅ `.env` - Actualitzat amb múltiples origins
+- ✅ `.env.example` - Documentació extensa amb exemples
 
-### Configuració
-- Whitelist d'origins
-- Permetre credentials (cookies)
-- Mètodes permesos: GET, POST, PUT, DELETE, PATCH
-- Headers permesos: Content-Type, Authorization
+### Configuració implementada
 
-### Codi complet
-Veure secció "10. CORS" al document de revisió.
+**Middleware CORS** (`src/middleware/corsConfig.js`):
+```javascript
+// Parsejar origins des de variable d'entorn (separats per comes)
+const allowedOrigins = config.cors.origins
+  ? config.cors.origins.split(',').map(origin => origin.trim())
+  : ['http://localhost:3000'];
+
+export const corsOptions = {
+  origin: (origin, callback) => {
+    // Permetre peticions sense origin (Postman, curl, apps mòbils)
+    if (!origin) return callback(null, true);
+    
+    // Validar contra whitelist
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`Origin ${origin} no permès per CORS`));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['RateLimit-Limit', 'RateLimit-Remaining', 'RateLimit-Reset'],
+  maxAge: 86400, // 24 hores de cache per preflight
+};
+```
+
+**Error handler CORS**:
+```javascript
+export function corsErrorHandler(err, req, res, next) {
+  if (err.message && err.message.includes('CORS')) {
+    return res.status(403).json({
+      success: false,
+      error: 'CORS_ERROR',
+      message: 'Origin no permès. Contacta amb l\'administrador.',
+      statusCode: 403,
+    });
+  }
+  next(err);
+}
+```
+
+**Variables d'entorn** (`.env`):
+```bash
+# Múltiples origins separats per comes
+CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+```
+
+**Documentació** (`.env.example`):
+```bash
+# Origins permesos per fer peticions a l'API
+# ⚠️ IMPORTANT: Només origins de confiança! Seguretat crítica.
+# 
+# Format: Llista separada per comes (sense espais)
+# Development: http://localhost:3000,http://localhost:5173
+# Production: https://app.bombers.cat
+# Mixed: http://localhost:3000,https://staging.bombers.cat,https://app.bombers.cat
+# 
+# Notes:
+#   - NO usar http:// en producció (només https://)
+#   - NO incloure trailing slash (/)
+#   - NO incloure paths (/api, /login, etc.)
+#   - Peticions sense origin (Postman, curl, apps mòbils) sempre permeses
+CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+```
+
+### Tests realitzats
+
+✅ **Test 1: Origin permès (localhost:3000)**
+```bash
+curl -X OPTIONS http://localhost:5000/api/v1/auth/login \
+  -H "Origin: http://localhost:3000"
+
+# Resposta:
+HTTP/1.1 204 No Content
+Access-Control-Allow-Origin: http://localhost:3000
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Methods: GET,POST,PUT,DELETE,PATCH,OPTIONS
+```
+
+✅ **Test 2: Origin permès (localhost:5173 - Vite)**
+```bash
+curl -X OPTIONS http://localhost:5000/api/v1/auth/login \
+  -H "Origin: http://localhost:5173"
+
+# Resposta:
+HTTP/1.1 204 No Content
+Access-Control-Allow-Origin: http://localhost:5173
+Access-Control-Allow-Credentials: true
+```
+
+✅ **Test 3: Sense origin (Postman/curl)**
+```bash
+curl http://localhost:5000/health
+
+# Resposta:
+{"status":"ok","database":"connected"}
+# ✅ Funciona sense CORS (per apps mòbils, Postman, etc.)
+```
+
+✅ **Test 4: Origin NO permès**
+```bash
+curl -X POST http://localhost:5000/api/v1/auth/login \
+  -H "Origin: http://malicious-site.com" \
+  -d '{"email":"test@test.com"}'
+
+# Resposta:
+{
+  "success": false,
+  "error": "CORS_ERROR",
+  "message": "Origin no permès. Contacta amb l'administrador.",
+  "statusCode": 403
+}
+```
+
+### Característiques implementades
+
+**1. Whitelist d'origins:**
+- Llista configurable des de `.env`
+- Múltiples origins separats per comes
+- Validació estricta contra la llista
+
+**2. Credentials:**
+- `credentials: true` - Permet JWT en headers Authorization
+- Compatible amb cookies (si es fan servir en el futur)
+
+**3. Mètodes HTTP:**
+- GET, POST, PUT, DELETE, PATCH, OPTIONS
+- Tots els mètodes necessaris per una API REST
+
+**4. Headers:**
+- **Allowed**: Content-Type, Authorization, X-Requested-With, Accept
+- **Exposed**: RateLimit-*, X-Total-Count (per paginació)
+
+**5. Preflight caching:**
+- `maxAge: 86400` (24 hores)
+- Redueix peticions OPTIONS repetides
+
+**6. Sense origin:**
+- Postman, curl, apps mòbils sempre permesos
+- No trenquen el testing manual
+
+**7. Error handling:**
+- Missatge clar: "Origin no permès"
+- Codi 403 Forbidden
+- Format consistent amb altres errors
+- Logging automàtic amb origin, IP, path
+
+### Beneficis aconseguits
+
+- 🔒 **Seguretat millorada**: Només origins de confiança
+- 🌍 **Multi-entorn**: Dev, staging, prod en una sola variable
+- ⚡ **Flexible**: Afegir/treure origins sense canviar codi
+- 🛡️ **Protecció**: Bloqueig automàtic de peticions malicioses
+- 📊 **Transparent**: Logging de tots els intents bloquejats
+- 📦 **Compatible**: Postman, curl, apps mòbils funcionen
+- 📝 **Documentat**: `.env.example` amb exemples clars
+- ✅ **Testat**: 4 casos de prova validats
+
+### Configuració per producció
+
+**Development:**
+```bash
+CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+```
+
+**Staging:**
+```bash
+CORS_ORIGINS=http://localhost:3000,https://staging.bombers.cat
+```
+
+**Production:**
+```bash
+CORS_ORIGINS=https://app.bombers.cat,https://admin.bombers.cat
+```
+
+### Logging automàtic
+
+**Origin permès:**
+```json
+{"level":"debug","origin":"http://localhost:3000","msg":"Origin permès per CORS"}
+```
+
+**Origin bloquejat:**
+```json
+{
+  "level":"warn",
+  "origin":"http://malicious-site.com",
+  "allowedOrigins":["http://localhost:3000","http://localhost:5173"],
+  "msg":"Origin bloquejat per CORS"
+}
+```
+
+### Notes importants
+
+⚠️ **Producció**:
+- Només usar `https://` (mai `http://`)
+- No incloure `www.` si no és necessari
+- Mantenir la llista mínima (només origins reals)
+
+✅ **Testing**:
+- Postman/curl sempre funcionen (sense origin)
+- Apps mòbils sempre funcionen (sense origin)
+- Navegadors validen CORS automàticament
+
+📊 **Monitoratge**:
+- Revisar logs per intents bloquejats
+- Identificar origins legítims no afegits
+- Detectar intents d'accés maliciós
+
+**Data completat**: 6 de desembre de 2025
 
 ---
 

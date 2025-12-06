@@ -8,6 +8,7 @@ import { requestId } from './middleware/requestId.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
 import { config } from './config/env.js';
 import { swaggerSpec } from './config/swagger.js';
+import { corsOptions, corsErrorHandler } from './middleware/corsConfig.js';
 
 const app = express();
 
@@ -28,11 +29,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customCss: '.swagger-ui .topbar { display: none }',
 }));
 
-// CORS
-app.use(cors({
-  origin: config.cors.origin,
-  credentials: true
-}));
+// CORS amb whitelist d'origins
+app.use(cors(corsOptions));
 
 // Parsing de JSON i URL-encoded
 app.use(express.json());
@@ -166,6 +164,9 @@ if (process.env.NODE_ENV === 'development') {
 
 // Gestió de rutes no trobades (404)
 app.use(notFoundHandler);
+
+// Gestió d'errors de CORS
+app.use(corsErrorHandler);
 
 // Gestió centralitzada d'errors
 app.use(errorHandler);

@@ -13,7 +13,7 @@ const optionalEnvVars = {
   NODE_ENV: 'development',
   PORT: '5000',
   HOST: 'localhost',
-  CORS_ORIGIN: 'http://localhost:3000',
+  CORS_ORIGINS: 'http://localhost:3000',
   LOG_LEVEL: 'info',
   JWT_ACCESS_EXPIRES_IN: '15m',
   JWT_REFRESH_EXPIRES_IN: '7d',
@@ -81,7 +81,7 @@ export const config = {
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN,
   },
   cors: {
-    origin: process.env.CORS_ORIGIN,
+    origins: process.env.CORS_ORIGINS,
   },
   logging: {
     level: process.env.LOG_LEVEL,
