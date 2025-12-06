@@ -1,19 +1,32 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import swaggerUi from 'swagger-ui-express';
 import logger from './utils/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { requestId } from './middleware/requestId.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
 import { config } from './config/env.js';
+import { swaggerSpec } from './config/swagger.js';
 
 const app = express();
 
 // Request ID únic per cada petició (traçabilitat)
 app.use(requestId);
 
-// Middleware de seguretat
-app.use(helmet());
+// Middleware de seguretat (excepte per Swagger UI)
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api-docs')) {
+    return next();
+  }
+  helmet()(req, res, next);
+});
+
+// Swagger UI (documentació interactiva)
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customSiteTitle: 'Serveis Extraordinaris API',
+  customCss: '.swagger-ui .topbar { display: none }',
+}));
 
 // CORS
 app.use(cors({

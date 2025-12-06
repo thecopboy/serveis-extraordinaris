@@ -17,7 +17,7 @@
 | 5 | Tokens expirats s'acumulen | 🟡 Baixa | ✅ **COMPLETAT** |
 | 6 | Logging no estructurat | 🟡 Baixa | ✅ **COMPLETAT** |
 | 7 | .env.example incomplet | 🟡 Baixa | ✅ **COMPLETAT** |
-| 8 | Manca documentació API | 🟠 Mitjana | ⏳ Pendent |
+| 8 | Manca documentació API | 🟠 Mitjana | ✅ **COMPLETAT** |
 | 9 | Sense tests unitaris | 🔴 Alta | ⏳ Pendent |
 | 10 | CORS mal configurat | 🟠 Mitjana | ⏳ Pendent |
 
@@ -463,26 +463,207 @@ CLEANUP_SCHEDULE=0 3 * * *
 
 ---
 
-## 🟠 8. DOCUMENTACIÓ API (SWAGGER)
+## ✅ 8. DOCUMENTACIÓ API (SWAGGER) - **COMPLETAT**
 
 ### Problema
-No hi ha documentació interactiva de l'API.
+No hi havia documentació interactiva de l'API. Els desenvolupadors frontend necessitaven consultar el codi o fer peticions de prova per entendre els endpoints.
 
-### Solució
+### Solució Implementada
 ```bash
-npm install swagger-jsdoc swagger-ui-express
+npm install swagger-jsdoc swagger-ui-express  # ✅ Instal·lat
 ```
 
-### Fitxers a crear/modificar
-- ✅ `src/config/swagger.js` - Configuració Swagger
-- ✅ `src/app.js` - Registrar `/api-docs`
-- ✅ `src/routes/authRoutes.js` - Afegir comentaris JSDoc
+### Fitxers creats/modificats
+- ✅ `src/config/swagger.js` - Configuració OpenAPI 3.0 amb esquemes reutilitzables
+- ✅ `src/app.js` - Integració de Swagger UI a `/api-docs`
+- ✅ `src/routes/authRoutes.js` - Anotacions JSDoc per tots els endpoints
+- ✅ `SWAGGER.md` - Documentació d'ús de Swagger
 
-### Resultat
-Documentació interactiva a `http://localhost:3000/api-docs`
+### Configuració implementada
 
-### Codi complet
-Veure secció "8. SWAGGER" al document de revisió.
+**Swagger config** (`src/config/swagger.js`):
+- **OpenAPI 3.0.0**: Estàndard modern d'API documentation
+- **2 servidors**: Development (localhost:5000) i Production
+- **Security schemes**: Bearer JWT amb descripció
+- **Esquemes reutilitzables**: User, Error, RegisterRequest, LoginRequest, etc.
+- **Tags**: Organització per categories (Auth)
+
+**Integració** (`src/app.js`):
+```javascript
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger.js';
+
+// Swagger UI amb customització
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customSiteTitle: 'Serveis Extraordinaris API',
+  customCss: '.swagger-ui .topbar { display: none }',
+}));
+```
+
+**Anotacions JSDoc** (tots els endpoints documentats):
+- POST /auth/register - Amb validacions i rate limiting
+- POST /auth/login - Amb exemples de credencials
+- POST /auth/refresh - Renovació de tokens
+- POST /auth/logout - Revocació de tokens
+- POST /auth/logout-all - Logout global
+- GET /auth/me - Perfil d'usuari
+
+### Endpoints documentats
+
+#### 🔓 Públics (6 endpoints)
+1. **POST /auth/register**
+   - Body: email, password, nom, cognom_1, cognom_2, numero_professional, rol
+   - Responses: 201 (creat), 400 (validació), 409 (email duplicat), 429 (rate limit)
+   
+2. **POST /auth/login**
+   - Body: email, password
+   - Responses: 200 (OK), 400 (validació), 401 (credencials), 429 (rate limit)
+   
+3. **POST /auth/refresh**
+   - Body: refreshToken
+   - Responses: 200 (OK), 400 (validació), 401 (token invàlid)
+   
+4. **POST /auth/logout**
+   - Body: refreshToken
+   - Responses: 200 (OK), 400 (validació), 404 (token no trobat)
+
+#### 🔒 Privats (2 endpoints)
+5. **POST /auth/logout-all**
+   - Security: Bearer Token
+   - Responses: 200 (OK), 401 (no autenticat)
+   
+6. **GET /auth/me**
+   - Security: Bearer Token
+   - Responses: 200 (OK), 401 (no autenticat)
+
+### Accés a la documentació
+
+**URL**: http://localhost:5000/api-docs
+
+**Característiques**:
+- ✅ **Try it out**: Prova endpoints directament des del navegador
+- ✅ **Authorize**: Botó per afegir Bearer Token (només enganxar el token)
+- ✅ **Exemples**: Cada endpoint té exemples de request/response
+- ✅ **Validacions**: Tipus de dades, camps obligatoris, patrons
+- ✅ **Esquemes**: Models de dades reutilitzables i ben documentats
+- ✅ **Errors**: Codis d'estat i missatges d'error documentats
+
+### Com utilitzar Swagger
+
+1. **Provar endpoint públic**:
+   - Clica a POST /auth/login
+   - Clica "Try it out"
+   - Omple email i password
+   - Clica "Execute"
+   - Veus la resposta amb els tokens
+
+2. **Provar endpoint privat**:
+   - Copia l'`accessToken` del login
+   - Clica "Authorize" (botó verd a dalt)
+   - Enganxa el token (sense "Bearer")
+   - Clica "Authorize"
+   - Ara pots provar GET /auth/me
+
+### Esquemes principals
+
+**User** (resposta):
+```json
+{
+  "id": 1,
+  "email": "usuari@example.com",
+  "nom": "Joan",
+  "cognom_1": "Garcia",
+  "cognom_2": "Pérez",
+  "numero_professional": "B12345",
+  "rol": "usuari",
+  "actiu": true,
+  "data_registre_inicial": "2025-12-06T10:00:00Z"
+}
+```
+
+**Error** (resposta d'error):
+```json
+{
+  "success": false,
+  "error": "VALIDATION_ERROR",
+  "message": "Les dades no són vàlides",
+  "statusCode": 400,
+  "details": [{"field": "email", "message": "Format invàlid"}],
+  "requestId": "123e4567-e89b-12d3-a456-426614174000"
+}
+```
+
+**AuthResponse** (login/register):
+```json
+{
+  "success": true,
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "a1b2c3d4e5f6g7h8i9j0...",
+    "user": { /* User object */ }
+  }
+}
+```
+
+### Personalització
+
+- **Títol**: "Serveis Extraordinaris API"
+- **Barra superior**: Oculta (més espai per l'API)
+- **Servidors**: Development i Production pre-configurats
+- **Helmet**: Desactivat només per /api-docs (CSP conflict)
+
+### Beneficis aconseguits
+
+- 📚 **Documentació viva**: Sempre actualitzada (està al codi)
+- 🧪 **Testing interactiu**: No cal Postman per provar l'API
+- 🚀 **Onboarding ràpid**: Nous devs entenen l'API en minuts
+- 📝 **Contracte clar**: Frontend i Backend comparteixen especificació
+- ✅ **Validacions visibles**: Camps obligatoris, formats, enums, etc.
+- 🔒 **Seguretat documentada**: Bearer Token, rate limiting, errors
+- 🌍 **Estàndard**: OpenAPI 3.0 compatible amb generadors de clients
+
+### Manteniment futur
+
+Per afegir nous endpoints:
+
+1. Afegir anotació `@swagger` al fitxer de rutes:
+```javascript
+/**
+ * @swagger
+ * /nou-endpoint:
+ *   post:
+ *     summary: Descripció breu
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/NomEsquema'
+ *     responses:
+ *       200:
+ *         description: Resposta exitosa
+ */
+```
+
+2. Si cal, afegir nou esquema a `swagger.js`
+3. Especificar security si és endpoint privat
+4. Documentar tots els codis d'estat possibles
+
+### Producció
+
+Opcions per producció:
+- **Mantenir Swagger**: Útil per desenvolupadors frontend i debugging
+- **Desactivar Swagger**: Si la documentació és només interna
+
+Per desactivar:
+```javascript
+if (config.node.env !== 'production') {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+}
+```
+
+**Data completat**: 6 de desembre de 2025
 
 ---
 
