@@ -397,39 +397,64 @@ Aquesta secció reflecteix l'experiència real d'implementació. Les fases origi
 
 ---
 
-### FASE 3: Interfície web amb React (5-7 dies)
-**Frontend modern amb Vite**
+### FASE 3: Interfície web amb HTML5 Vanilla i Web Components (5-7 dies)
+**Frontend natiu sense frameworks**
 
 #### 3.1 Setup (Dia 1)
-- [ ] Crear projecte amb Vite: `npm create vite@latest frontend -- --template react`
-- [ ] Instal·lar dependencies:
-  ```bash
-  npm install react-router-dom axios
-  npm install @tanstack/react-query
-  npm install zustand
-  npm install react-hook-form
-  npm install date-fns
+- [ ] Crear estructura de carpetes:
   ```
+  frontend/
+  ├── index.html
+  ├── css/
+  │   ├── main.css
+  │   └── components.css
+  ├── js/
+  │   ├── main.js
+  │   ├── router.js
+  │   ├── api/
+  │   │   └── authService.js
+  │   ├── components/
+  │   │   ├── login-form.js
+  │   │   ├── servei-list.js
+  │   │   └── servei-form.js
+  │   ├── utils/
+  │   │   ├── storage.js
+  │   │   └── validators.js
+  │   └── state/
+  │       └── authStore.js
+  └── assets/
+  ```
+- [ ] Configurar module bundler opcional (Vite per development server i HMR)
+- [ ] Variables d'entorn: API_URL
 
-#### 3.2 Autenticació frontend (Dies 2-3)
-- [ ] Store de Zustand per auth
-- [ ] Interceptor Axios per JWT
-- [ ] Refresh automàtic de tokens
-- [ ] Protected routes
-- [ ] Login/Register forms amb validació
+#### 3.2 Sistema base (Dia 1-2)
+- [ ] Router client-side amb History API
+- [ ] State management simple (Observer pattern o Proxy-based)
+- [ ] Service layer per crides API amb fetch()
+- [ ] Gestió de JWT (localStorage/sessionStorage)
+- [ ] Interceptor per refresh automàtic de tokens
 
-#### 3.3 CRUD de serveis (Dies 4-5)
-- [ ] Llistat de serveis amb filtres
-- [ ] Formulari crear/editar servei
+#### 3.3 Web Components base (Dia 2-3)
+- [ ] Component base class reutilitzable
+- [ ] Login/Register forms amb Shadow DOM
+- [ ] Protected routes (redirect si no autenticat)
+- [ ] Validació de formularis nativa (HTML5 + JS)
+- [ ] Error handling i toasts
+
+#### 3.4 CRUD de serveis (Dies 4-5)
+- [ ] Componente: `<servei-list>` amb filtres
+- [ ] Componente: `<servei-form>` (crear/editar)
+- [ ] Componente: `<servei-card>` per visualització
 - [ ] Validació de serveis (admin)
-- [ ] Informes mensuals
+- [ ] Informes mensuals amb taules HTML
 
-#### 3.4 UX i millores (Dies 6-7)
-- [ ] Loading states
-- [ ] Error handling
-- [ ] Toasts/notificacions
-- [ ] Responsive design
-- [ ] Dark mode (opcional)
+#### 3.5 UX i millores (Dies 6-7)
+- [ ] Loading states (skeleton screens)
+- [ ] Error boundaries
+- [ ] Toasts/notificacions (Web Component)
+- [ ] Responsive design amb CSS Grid/Flexbox
+- [ ] Dark mode amb CSS custom properties
+- [ ] Accessibility (ARIA labels, keyboard navigation)
 
 **Temps estimat**: 5-7 dies
 
@@ -627,19 +652,27 @@ backend/
 └── README.md            # Instruccions d'instal·lació
 
 frontend/
-├── src/
-│   ├── components/      # Components React
-│   ├── pages/           # Pàgines (Login, Dashboard, ...)
-│   ├── hooks/           # Custom hooks
-│   ├── services/        # Clients API (authService.js, ...)
-│   ├── store/           # Zustand stores
-│   ├── utils/           # Utilitats
-│   ├── App.jsx
-│   └── main.jsx
-├── .env                 # VITE_API_URL (gitignored)
+├── index.html
+├── css/
+│   ├── main.css
+│   ├── components.css
+│   └── themes.css
+├── js/
+│   ├── main.js
+│   ├── router.js
+│   ├── components/      # Web Components (custom elements)
+│   │   ├── login-form.js
+│   │   ├── servei-list.js
+│   │   ├── servei-form.js
+│   │   └── toast-notification.js
+│   ├── services/        # API clients (authService.js, serveiService.js)
+│   ├── state/           # State management (Observer/Proxy)
+│   │   └── authStore.js
+│   └── utils/           # Helpers i validators
+├── assets/              # Imatges, fonts, icons
+├── .env                 # API_URL (gitignored)
 ├── .env.example
-├── package.json
-└── index.html
+└── package.json         # Opcional: només si uses Vite per dev
 ```
 
 ---
@@ -929,12 +962,13 @@ backend/
 ### Stack Confirmat (Implementat amb èxit)
 
 #### Frontend (PENDENT - FASE 3)
-- **Recomanació**: React + Vite (no Vanilla JS)
-- Justificació: Ecosistema madur, component libraries, dev experience
-- State management: Zustand (simple) o Redux Toolkit (complex)
-- HTTP client: Axios amb interceptors per JWT refresh automàtic
-- Forms: react-hook-form (rendiment) + yup/zod (validació)
-- UI: Tailwind CSS o Material-UI (segons preferència)
+- **Decisió confirmada**: HTML5 Vanilla + Web Components (natiu)
+- Justificació: Zero dependencies, pes mínim, control total, rendiment natiu
+- State management: Observer pattern o Proxy-based (custom)
+- HTTP client: fetch() natiu amb interceptors manuals
+- Forms: Validació HTML5 + Web Components amb Shadow DOM
+- CSS: Variables CSS (Custom Properties) per temes
+- Bundler opcional: Vite només per dev server i HMR
 
 #### Backend ✅ IMPLEMENTAT
 - **Node.js 22+ amb Express**
