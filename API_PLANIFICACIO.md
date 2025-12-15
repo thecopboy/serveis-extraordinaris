@@ -46,19 +46,21 @@ API REST per gestionar serveis extraordinaris amb autenticació JWT i gestió mu
 **Objectiu**: Sistema d'autenticació JWT complet
 
 #### 2.1. Model i Repositori d'Usuaris
-- [ ] Crear repository pattern per usuaris
-- [ ] Queries SQL (getUserById, getUserByEmail, createUser, etc.)
+- [x] Crear repository pattern per usuaris
+- [x] Queries SQL (getUserById, getUserByEmail, createUser, etc.)
 
 #### 2.2. Endpoints d'Autenticació
-- [ ] `POST /api/v1/auth/register` - Registre d'usuari
-- [ ] `POST /api/v1/auth/login` - Login (retorna access + refresh token)
-- [ ] `POST /api/v1/auth/refresh` - Renovar access token
-- [ ] `POST /api/v1/auth/logout` - Logout (invalida refresh token)
+- [x] `POST /api/v1/auth/register` - Registre d'usuari
+- [x] `POST /api/v1/auth/login` - Login (retorna access + refresh token)
+- [x] `POST /api/v1/auth/refresh` - Renovar access token
+- [x] `POST /api/v1/auth/logout` - Logout (invalida refresh token)
+- [x] `POST /api/v1/auth/logout-all` - Logout de tots els dispositius
+- [x] `GET /api/v1/auth/me` - Obtenir perfil usuari actual
 
 #### 2.3. Middleware d'Autenticació
-- [ ] Middleware `authenticate` (verifica JWT)
-- [ ] Middleware `authorize` (verifica rols)
-- [ ] Gestió de refresh tokens a la BD
+- [x] Middleware `authenticate` (verifica JWT)
+- [x] Middleware `authorize` (verifica rols)
+- [x] Gestió de refresh tokens a la BD
 
 **Dependències**:
 ```json
@@ -80,18 +82,23 @@ GET    /api/v1/auth/me            (authenticated)
 ---
 
 ### FASE 3: Gestió d'Empreses 🏢
-**Objectiu**: CRUD d'empreses per usuari
+**Objectiu**: CRUD d'empreses amb historial laboral per usuari
+
+**Nota**: Esquema final amb dates d'inici/fi + multi-empresa simultània
 
 #### 3.1. Repository d'Empreses
-- [ ] getAllByUserId, getById, create, update, delete
-- [ ] Validar que l'empresa pertany a l'usuari
+- [x] getAllByUserId, getById, create, update, delete
+- [x] getActivesByUserId (només empreses amb data_fi = NULL)
+- [x] setDataFi (finalitzar relació laboral)
+- [x] Validar que l'empresa pertany a l'usuari
 
 #### 3.2. Endpoints d'Empreses
-- [ ] `GET /api/v1/empreses` - Llistar empreses de l'usuari
-- [ ] `GET /api/v1/empreses/:id` - Obtenir detall
-- [ ] `POST /api/v1/empreses` - Crear empresa
-- [ ] `PUT /api/v1/empreses/:id` - Actualitzar empresa
-- [ ] `DELETE /api/v1/empreses/:id` - Eliminar empresa (soft delete)
+- [x] `GET /api/v1/empreses` - Llistar empreses de l'usuari (amb filtres)
+- [x] `GET /api/v1/empreses/:id` - Obtenir detall
+- [x] `POST /api/v1/empreses` - Crear empresa
+- [x] `PUT /api/v1/empreses/:id` - Actualitzar empresa
+- [x] `DELETE /api/v1/empreses/:id` - Eliminar empresa (soft delete)
+- [x] `PATCH /api/v1/empreses/:id/finalitzar` - Marcar data de fi (deixar de treballar-hi)
 
 **Endpoints**:
 ```
@@ -340,7 +347,22 @@ FASE 1 → FASE 2 → FASE 3 → FASE 4 → FASE 5 → FASE 6 → FASE 7 → FAS
   - Gestió d'errors professional
   - Validació de variables d'entorn
   - Request ID per traçabilitat
-- ⏳ **FASE 2**: Autenticació JWT (següent)
+- ✅ **FASE 2 COMPLETADA**: Autenticació i Usuaris
+  - Repository pattern implementat (userRepository, refreshTokenRepository)
+  - Endpoints d'autenticació complets (register, login, refresh, logout, logout-all, me)
+  - Middleware d'autenticació i autorització
+  - Validació d'inputs amb express-validator
+  - Rate limiting per seguretat
+  - Documentació Swagger completa
+- ✅ **FASE 3 COMPLETADA**: Gestió d'Empreses
+  - Taula `empreses` amb dates d'inici/fi (historial laboral complet)
+  - Repository d'empreses amb 8 mètodes (CRUD + actives + finalitzar)
+  - Service amb validacions de negoci
+  - 6 endpoints REST amb autenticació
+  - Validació d'inputs per crear/actualitzar
+  - Suport multi-empresa simultània (data_fi = NULL)
+  - Documentació Swagger completa
+- ⏳ **FASE 4**: Tipus de Serveis (següent)
 
 ---
 

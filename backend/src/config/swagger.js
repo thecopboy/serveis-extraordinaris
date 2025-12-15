@@ -242,12 +242,175 @@ const options = {
             },
           },
         },
+        Empresa: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'integer',
+              example: 1,
+            },
+            usuari_id: {
+              type: 'integer',
+              example: 1,
+            },
+            nom: {
+              type: 'string',
+              example: 'Hospital Son Espases',
+            },
+            cif: {
+              type: 'string',
+              nullable: true,
+              example: 'A12345678',
+            },
+            adreca: {
+              type: 'string',
+              nullable: true,
+              example: 'Carrer de l\'Hospital, 1',
+            },
+            telefon: {
+              type: 'string',
+              nullable: true,
+              example: '971123456',
+            },
+            email: {
+              type: 'string',
+              format: 'email',
+              nullable: true,
+              example: 'info@hospital.com',
+            },
+            data_inici: {
+              type: 'string',
+              format: 'date',
+              example: '2020-01-15',
+              description: 'Data d\'inici de la relació laboral',
+            },
+            data_fi: {
+              type: 'string',
+              format: 'date',
+              nullable: true,
+              example: null,
+              description: 'Data de fi de la relació laboral (NULL = encara hi treballa)',
+            },
+            observacions: {
+              type: 'string',
+              nullable: true,
+              example: 'Notes addicionals',
+            },
+            actiu: {
+              type: 'boolean',
+              example: true,
+            },
+            created_at: {
+              type: 'string',
+              format: 'date-time',
+              example: '2025-12-15T10:00:00Z',
+            },
+            updated_at: {
+              type: 'string',
+              format: 'date-time',
+              example: '2025-12-15T10:00:00Z',
+            },
+          },
+        },
+        EmpresaInput: {
+          type: 'object',
+          required: ['nom'],
+          properties: {
+            nom: {
+              type: 'string',
+              minLength: 2,
+              maxLength: 255,
+              example: 'Hospital Son Espases',
+              description: 'Nom de l\'empresa (obligatori)',
+            },
+            cif: {
+              type: 'string',
+              maxLength: 20,
+              example: 'A12345678',
+              description: 'CIF de l\'empresa (opcional)',
+            },
+            adreca: {
+              type: 'string',
+              maxLength: 500,
+              example: 'Carrer de l\'Hospital, 1',
+              description: 'Adreça de l\'empresa (opcional)',
+            },
+            telefon: {
+              type: 'string',
+              maxLength: 20,
+              example: '971123456',
+              description: 'Telèfon de contacte (opcional)',
+            },
+            email: {
+              type: 'string',
+              format: 'email',
+              maxLength: 255,
+              example: 'info@hospital.com',
+              description: 'Email de contacte (opcional)',
+            },
+            data_inici: {
+              type: 'string',
+              format: 'date',
+              example: '2020-01-15',
+              description: 'Data d\'inici de la relació laboral (opcional, per defecte data actual)',
+            },
+            data_fi: {
+              type: 'string',
+              format: 'date',
+              nullable: true,
+              example: null,
+              description: 'Data de fi de la relació laboral (NULL = encara hi treballa)',
+            },
+            observacions: {
+              type: 'string',
+              maxLength: 1000,
+              example: 'Notes addicionals',
+              description: 'Observacions o notes (opcional)',
+            },
+          },
+        },
+      },
+      responses: {
+        Unauthorized: {
+          description: 'No autenticat - Token JWT invàlid o absent',
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/Error',
+              },
+            },
+          },
+        },
+        NotFound: {
+          description: 'Recurs no trobat',
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/Error',
+              },
+            },
+          },
+        },
+        ValidationError: {
+          description: 'Error de validació',
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/Error',
+              },
+            },
+          },
+        },
       },
     },
     tags: [
       {
         name: 'Auth',
         description: 'Endpoints d\'autenticació i gestió de sessions',
+      },
+      {
+        name: 'Empreses',
+        description: 'Gestió d\'empreses i historial laboral',
       },
     ],
   },

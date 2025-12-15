@@ -11,7 +11,7 @@ DROP TABLE IF EXISTS audit_log CASCADE;
 DROP TABLE IF EXISTS serveis CASCADE;
 DROP TABLE IF EXISTS tipus_servei CASCADE;
 DROP TABLE IF EXISTS refresh_tokens CASCADE;
-DROP TABLE IF EXISTS historial_empreses CASCADE;
+DROP TABLE IF EXISTS empreses CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
 -- ============================================
@@ -71,35 +71,43 @@ COMMENT ON COLUMN users.pseudonim IS 'Nom que es mostra a la interfície (opcion
 COMMENT ON COLUMN users.numero_professional IS 'Identificador professional (NO únic)';
 
 -- ============================================
--- TAULA: historial_empreses
+-- TAULA: empreses
 -- ============================================
-CREATE TABLE historial_empreses (
+CREATE TABLE empreses (
     id SERIAL PRIMARY KEY,
     usuari_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    nom_empresa VARCHAR(255) NOT NULL,
     
-    data_alta DATE NOT NULL DEFAULT CURRENT_DATE,
-    data_baixa DATE,
+    -- Informació bàsica
+    nom VARCHAR(255) NOT NULL,
+    cif VARCHAR(20),
+    adreca TEXT,
+    telefon VARCHAR(20),
+    email VARCHAR(255),
     
-    activa BOOLEAN NOT NULL DEFAULT true,
+    -- Dates de relació laboral
+    data_inici DATE NOT NULL DEFAULT CURRENT_DATE,
+    data_fi DATE,  -- NULL = encara hi treballa
+    
+    -- Metadades
     observacions TEXT,
+    actiu BOOLEAN DEFAULT true,  -- Soft delete
     
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    CONSTRAINT data_baixa_posterior CHECK (data_baixa IS NULL OR data_baixa >= data_alta),
-    CONSTRAINT empresa_activa_sense_data_baixa CHECK (
-        (activa = true AND data_baixa IS NULL) OR 
-        (activa = false)
-    )
+    -- Restriccions
+    CONSTRAINT data_fi_posterior CHECK (data_fi IS NULL OR data_fi >= data_inici),
+    CONSTRAINT email_valid CHECK (email IS NULL OR email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
 );
 
-CREATE INDEX idx_historial_empreses_usuari ON historial_empreses(usuari_id);
-CREATE INDEX idx_historial_empreses_activa ON historial_empreses(usuari_id, activa);
-CREATE INDEX idx_historial_empreses_dates ON historial_empreses(data_alta, data_baixa);
+CREATE INDEX idx_empreses_usuari ON empreses(usuari_id);
+CREATE INDEX idx_empreses_usuari_actives ON empreses(usuari_id, data_fi) WHERE data_fi IS NULL;
+CREATE INDEX idx_empreses_dates ON empreses(data_inici, data_fi);
+CREATE INDEX idx_empreses_actiu ON empreses(actiu);
 
-COMMENT ON TABLE historial_empreses IS 'Historial laboral amb múltiples empreses per usuari';
-COMMENT ON COLUMN historial_empreses.activa IS 'Només una empresa activa per usuari';
+COMMENT ON TABLE empreses IS 'Historial laboral amb múltiples empreses simultànies per usuari';
+COMMENT ON COLUMN empreses.data_fi IS 'NULL indica que l''usuari encara hi treballa';
+COMMENT ON COLUMN empreses.actiu IS 'Soft delete - false amaga l''empresa sense perdre l''històric';
 
 -- ============================================
 -- TAULA: refresh_tokens
@@ -131,7 +139,7 @@ CREATE INDEX idx_refresh_tokens_expira ON refresh_tokens(expira_at);
 CREATE INDEX idx_refresh_tokens_actius ON refresh_tokens(usuari_id, revocat, expira_at) 
     WHERE revocat = false;
 
-COMMENT ON TABLE refresh_tokens IS 'Gestió de sessions JWT amb suport multi-dispositiu';
+COMMENT ON TABLE refresh_tokens IS 'Gestió s JWT amb suport multi-dispositiu';
 
 -- ============================================
 -- TAULA: tipus_servei
@@ -139,7 +147,7 @@ COMMENT ON TABLE refresh_tokens IS 'Gestió de sessions JWT amb suport multi-dis
 CREATE TABLE tipus_servei (
     id SERIAL PRIMARY KEY,
     usuari_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    empresa_id INTEGER NOT NULL REFERENCES historial_empreses(id) ON DELETE CASCADE,
+    empresa_id INTEGER NOT NULL REFERENCES empreses(id) ON DELETE CASCADE,
     
     -- Identificació del servei
     nom VARCHAR(100) NOT NULL,
@@ -290,7 +298,7 @@ $$ language 'plpgsql';
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_historial_empreses_updated_at BEFORE UPDATE ON historial_empreses
+CREATE TRIGGER update_empreses_updated_at BEFORE UPDATE ON empreses
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_tipus_servei_updated_at BEFORE UPDATE ON tipus_servei
@@ -311,25 +319,8 @@ $$ language 'plpgsql';
 CREATE TRIGGER trigger_calcular_durada BEFORE INSERT OR UPDATE ON serveis
     FOR EACH ROW EXECUTE FUNCTION calcular_durada_servei();
 
--- Funció per gestionar empresa activa (només una per usuari)
-CREATE OR REPLACE FUNCTION gestionar_empresa_activa()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.activa = true THEN
-        UPDATE historial_empreses 
-        SET activa = false 
-        WHERE usuari_id = NEW.usuari_id 
-        AND id != NEW.id 
-        AND activa = true;
-    END IF;
-    
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
-CREATE TRIGGER trigger_empresa_activa 
-    BEFORE INSERT OR UPDATE ON historial_empreses
-    FOR EACH ROW EXECUTE FUNCTION gestionar_empresa_activa();
+-- Nota: La funció gestionar_empresa_activa ja no existeix.
+-- La nova taula 'empreses' permet múltiples empreses actives simultàniament (data_fi = NULL).
 
 -- Funció per validar tipus_retorn segons tipus_remuneracio
 CREATE OR REPLACE FUNCTION validar_tipus_retorn()
@@ -453,7 +444,7 @@ SELECT
     ts.abreviatura AS tipus_servei_abreviatura,
     ts.tipus_remuneracio,
     ts.es_festiu,
-    he.nom_empresa,
+    e.nom AS nom_empresa,
     s.data_inici,
     s.data_fi,
     s.durada_hores,
@@ -468,7 +459,7 @@ SELECT
 FROM serveis s
 JOIN users u ON s.usuari_id = u.id
 JOIN tipus_servei ts ON s.tipus_servei_id = ts.id
-JOIN historial_empreses he ON ts.empresa_id = he.id;
+JOIN empreses e ON ts.empresa_id = e.id;
 
 COMMENT ON VIEW vista_serveis_complets IS 'Vista completa amb tota la informació de serveis i relacions';
 
@@ -523,8 +514,8 @@ INSERT INTO users (
 );
 
 -- Empresa activa de l'usuari admin
-INSERT INTO historial_empreses (usuari_id, nom_empresa, data_alta, activa) VALUES
-(1, 'Sistema', CURRENT_DATE, true);
+INSERT INTO empreses (usuari_id, nom, data_inici, data_fi) VALUES
+(1, 'Sistema', CURRENT_DATE, NULL);
 
 -- Tipus de serveis predefinits per l'admin
 INSERT INTO tipus_servei (
@@ -566,7 +557,7 @@ INSERT INTO tipus_servei (
 DO $$
 BEGIN
     RAISE NOTICE '✓ Esquema creat correctament!';
-    RAISE NOTICE '✓ 6 taules creades: users, historial_empreses, refresh_tokens, tipus_servei, serveis, audit_log';
+    RAISE NOTICE '✓ 6 taules creades: users, empreses, refresh_tokens, tipus_servei, serveis, audit_log';
     RAISE NOTICE '✓ 5 triggers instal·lats amb 6 funcions';
     RAISE NOTICE '✓ 2 vistes creades: vista_serveis_complets, vista_resum_mensual';
     RAISE NOTICE '✓ Usuari admin creat: admin@serveis.local (contrasenya: Admin123!)';

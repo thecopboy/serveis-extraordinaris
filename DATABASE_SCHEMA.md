@@ -87,54 +87,66 @@ CREATE INDEX idx_users_actiu ON users(actiu);
 
 ---
 
-### 2. `historial_empreses` (Historial d'Empreses)
+### 2. `empreses` (Historial d'Empreses)
 
-Registre de les empreses on ha treballat o treballa cada usuari, amb dates d'alta i baixa.
+Registre de les empreses on ha treballat o treballa cada usuari, amb dates d'inici i fi. Permet múltiples empreses actives simultàniament.
 
 ```sql
-CREATE TABLE historial_empreses (
+CREATE TABLE empreses (
     id SERIAL PRIMARY KEY,
     usuari_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    nom_empresa VARCHAR(255) NOT NULL,
     
-    data_alta DATE NOT NULL DEFAULT CURRENT_DATE, -- Data d'incorporació a l'empresa (obligatori, per defecte data actual)
-    data_baixa DATE, -- Data de sortida de l'empresa (NULL si encara hi treballa)
+    -- Informació bàsica
+    nom VARCHAR(255) NOT NULL,
+    cif VARCHAR(20),
+    adreca TEXT,
+    telefon VARCHAR(20),
+    email VARCHAR(255),
     
-    activa BOOLEAN NOT NULL DEFAULT true, -- Si és l'empresa actual
+    -- Dates de relació laboral
+    data_inici DATE NOT NULL DEFAULT CURRENT_DATE, -- Data d'incorporació (obligatori, per defecte data actual)
+    data_fi DATE, -- Data de sortida (NULL si encara hi treballa)
+    
+    -- Metadades
     observacions TEXT, -- Notes addicionals
+    actiu BOOLEAN DEFAULT true, -- Soft delete
     
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    CONSTRAINT data_baixa_posterior CHECK (data_baixa IS NULL OR data_baixa >= data_alta),
-    CONSTRAINT empresa_activa_sense_data_baixa CHECK (
-        (activa = true AND data_baixa IS NULL) OR 
-        (activa = false)
-    )
+    -- Restriccions
+    CONSTRAINT data_fi_posterior CHECK (data_fi IS NULL OR data_fi >= data_inici),
+    CONSTRAINT email_valid CHECK (email IS NULL OR email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
 );
 
-CREATE INDEX idx_historial_empreses_usuari ON historial_empreses(usuari_id);
-CREATE INDEX idx_historial_empreses_activa ON historial_empreses(usuari_id, activa);
-CREATE INDEX idx_historial_empreses_dates ON historial_empreses(data_alta, data_baixa);
+CREATE INDEX idx_empreses_usuari ON empreses(usuari_id);
+CREATE INDEX idx_empreses_usuari_actives ON empreses(usuari_id, data_fi) WHERE data_fi IS NULL;
+CREATE INDEX idx_empreses_dates ON empreses(data_inici, data_fi);
+CREATE INDEX idx_empreses_actiu ON empreses(actiu);
 ```
 
 **Camps:**
 - `id`: Identificador únic
 - `usuari_id`: Usuari propietari del registre
-- `nom_empresa`: Nom de l'empresa
-- `data_alta`: Data d'incorporació (obligatori, per defecte la data actual)
-- `data_baixa`: Data de sortida (NULL si encara hi treballa)
-- `activa`: Si és l'empresa on treballa actualment (només una per usuari)
+- `nom`: Nom de l'empresa
+- `cif`: CIF de l'empresa (opcional)
+- `adreca`: Adreça de l'empresa (opcional)
+- `telefon`: Telèfon de contacte (opcional)
+- `email`: Email de contacte (opcional)
+- `data_inici`: Data d'incorporació (obligatori, per defecte la data actual)
+- `data_fi`: Data de sortida (NULL si encara hi treballa)
 - `observacions`: Notes addicionals sobre la relació laboral
+- `actiu`: Control de soft delete (false amaga l'empresa sense perdre l'històric)
 - `created_at`: Data de creació del registre
 - `updated_at`: Data d'última modificació
 
 **Funcionalitats:**
 - Permet tenir un historial complet d'empreses amb dates
-- Només pot haver una empresa activa per usuari (gestionat pel trigger)
-- Una empresa només pot estar activa si data_baixa és NULL
-- Si `data_baixa` és NULL, significa que encara hi treballa
-- `data_alta` és obligatori i per defecte s'assigna la data actual
+- **Multi-empresa simultània**: Pot haver múltiples empreses amb data_fi = NULL (treballador pluriempleado)
+- Informació de contacte completa (CIF, adreça, telèfon, email)
+- Si `data_fi` és NULL, significa que encara hi treballa
+- `data_inici` és obligatori i per defecte s'assigna la data actual
+- Soft delete amb camp `actiu` per amagar empreses sense perdre l'històric
 
 ---
 
@@ -404,12 +416,12 @@ CREATE INDEX idx_audit_created ON audit_log(created_at);
 
 ```
 users (1) ──── (N) serveis
-users (1) ──── (N) historial_empreses
+users (1) ──── (N) empreses
 users (1) ──── (N) refresh_tokens
 users (1) ──── (N) tipus_servei
 users (1) ──── (N) audit_log
 
-historial_empreses (1) ──── (N) tipus_servei
+empreses (1) ──── (N) tipus_servei
 
 tipus_servei (1) ──── (N) serveis
 ```
@@ -450,7 +462,7 @@ SELECT
 FROM serveis s
 JOIN users u ON s.usuari_id = u.id
 JOIN tipus_servei ts ON s.tipus_servei_id = ts.id
-JOIN historial_empreses he ON ts.empresa_id = he.id;
+JOIN empreses e ON ts.empresa_id = e.id;
 ```
 
 ### Vista de Resum Mensual per Usuari
@@ -492,7 +504,7 @@ $$ language 'plpgsql';
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_historial_empreses_updated_at BEFORE UPDATE ON historial_empreses
+CREATE TRIGGER update_empreses_updated_at BEFORE UPDATE ON empreses
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_tipus_servei_updated_at BEFORE UPDATE ON tipus_servei
@@ -536,30 +548,9 @@ CREATE TRIGGER trigger_calcular_durada BEFORE INSERT OR UPDATE ON serveis
 
 ### Trigger per gestionar empresa activa
 
-Aquest trigger garanteix que només hi hagi una empresa activa per usuari:
+**NOTA**: Aquest trigger ja NO existeix a la nova implementació d'`empreses`. 
 
-```sql
-CREATE OR REPLACE FUNCTION gestionar_empresa_activa()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Si s'està marcant una empresa com activa
-    IF NEW.activa = true THEN
-        -- Desactivar totes les altres empreses d'aquest usuari
-        UPDATE historial_empreses 
-        SET activa = false 
-        WHERE usuari_id = NEW.usuari_id 
-        AND id != NEW.id 
-        AND activa = true;
-    END IF;
-    
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
-CREATE TRIGGER trigger_empresa_activa 
-    BEFORE INSERT OR UPDATE ON historial_empreses
-    FOR EACH ROW EXECUTE FUNCTION gestionar_empresa_activa();
-```
+La nova taula `empreses` **permet múltiples empreses actives simultàniament** (data_fi = NULL), ideal per treballadors pluriempleados. Ja no hi ha el camp `activa` ni la restricció d'una sola empresa activa.
 
 ### Trigger per validar tipus_retorn segons tipus_remuneracio
 
@@ -722,8 +713,8 @@ INSERT INTO users (
 );
 
 -- Empresa activa de l'usuari admin
-INSERT INTO historial_empreses (usuari_id, nom_empresa, data_alta, activa) VALUES
-(1, 'Sistema', CURRENT_DATE, true);
+INSERT INTO empreses (usuari_id, nom, data_inici, data_fi) VALUES
+(1, 'Sistema', CURRENT_DATE, NULL);
 ```
 
 ### Tipus de Serveis Predefinits per l'Admin
@@ -814,7 +805,7 @@ CREATE POLICY serveis_admin_policy ON serveis
 
 Per a 10 usuaris actius durant 1 any:
 - **users**: 10 registres (~5 KB, incloent preferències)
-- **historial_empreses**: ~20 registres (2 empreses/usuari de mitjana) (~5 KB)
+- **empreses**: ~20 registres (2 empreses/usuari de mitjana) (~8 KB amb camps addicionals)
 - **refresh_tokens**: ~30 registres actius (3 dispositius/usuari) (~15 KB)
 - **tipus_servei**: ~50 registres (5 tipus/usuari de mitjana) (~10 KB)
 - **serveis**: ~1200 registres (10 serveis/usuari/mes × 12 mesos) (~500 KB)

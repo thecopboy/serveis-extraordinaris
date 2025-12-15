@@ -89,9 +89,118 @@ const validateLogout = [
   handleValidationErrors
 ];
 
+/**
+ * Validació per crear empresa
+ */
+const validateCreateEmpresa = [
+  body('nom')
+    .trim()
+    .notEmpty().withMessage('El nom de l\'empresa és obligatori')
+    .isLength({ min: 2, max: 255 }).withMessage('El nom ha de tenir entre 2 i 255 caràcters'),
+  
+  body('cif')
+    .optional()
+    .trim()
+    .isLength({ max: 20 }).withMessage('El CIF no pot tenir més de 20 caràcters'),
+  
+  body('adreca')
+    .optional()
+    .trim()
+    .isLength({ max: 500 }).withMessage('L\'adreça és massa llarga'),
+  
+  body('telefon')
+    .optional()
+    .trim()
+    .isLength({ max: 20 }).withMessage('El telèfon no pot tenir més de 20 caràcters'),
+  
+  body('email')
+    .optional()
+    .trim()
+    .isEmail().withMessage('L\'email no és vàlid')
+    .normalizeEmail()
+    .isLength({ max: 255 }).withMessage('L\'email és massa llarg'),
+  
+  body('data_inici')
+    .optional()
+    .isISO8601().withMessage('La data d\'inici ha de ser una data vàlida (YYYY-MM-DD)'),
+  
+  body('data_fi')
+    .optional()
+    .isISO8601().withMessage('La data de fi ha de ser una data vàlida (YYYY-MM-DD)'),
+  
+  body('observacions')
+    .optional()
+    .trim()
+    .isLength({ max: 1000 }).withMessage('Les observacions són massa llargues'),
+  
+  handleValidationErrors
+];
+
+/**
+ * Validació per actualitzar empresa
+ */
+const validateUpdateEmpresa = [
+  body('nom')
+    .optional()
+    .trim()
+    .notEmpty().withMessage('El nom de l\'empresa no pot estar buit')
+    .isLength({ min: 2, max: 255 }).withMessage('El nom ha de tenir entre 2 i 255 caràcters'),
+  
+  body('cif')
+    .optional()
+    .trim()
+    .isLength({ max: 20 }).withMessage('El CIF no pot tenir més de 20 caràcters'),
+  
+  body('adreca')
+    .optional()
+    .trim()
+    .isLength({ max: 500 }).withMessage('L\'adreça és massa llarga'),
+  
+  body('telefon')
+    .optional()
+    .trim()
+    .isLength({ max: 20 }).withMessage('El telèfon no pot tenir més de 20 caràcters'),
+  
+  body('email')
+    .optional()
+    .trim()
+    .isEmail().withMessage('L\'email no és vàlid')
+    .normalizeEmail()
+    .isLength({ max: 255 }).withMessage('L\'email és massa llarg'),
+  
+  body('data_inici')
+    .optional()
+    .isISO8601().withMessage('La data d\'inici ha de ser una data vàlida (YYYY-MM-DD)'),
+  
+  body('data_fi')
+    .optional()
+    .isISO8601().withMessage('La data de fi ha de ser una data vàlida (YYYY-MM-DD)'),
+  
+  body('observacions')
+    .optional()
+    .trim()
+    .isLength({ max: 1000 }).withMessage('Les observacions són massa llargues'),
+  
+  handleValidationErrors
+];
+
+/**
+ * Validació per finalitzar relació laboral
+ */
+const validateFinalitzarEmpresa = [
+  body('data_fi')
+    .optional()
+    .isISO8601().withMessage('La data de fi ha de ser una data vàlida (YYYY-MM-DD)'),
+  
+  handleValidationErrors
+];
+
 export {
   validateRegister,
   validateLogin,
   validateRefresh,
-  validateLogout
+  validateLogout,
+  validateCreateEmpresa,
+  validateUpdateEmpresa,
+  validateFinalitzarEmpresa
 };

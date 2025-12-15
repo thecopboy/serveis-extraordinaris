@@ -120,7 +120,8 @@ app.get('/api/v1', (req, res) => {
     message: 'API v1 - Serveis Extraordinaris',
     status: 'ready',
     endpoints: {
-      auth: '/api/v1/auth'
+      auth: '/api/v1/auth',
+      empreses: '/api/v1/empreses'
     }
   });
 });
@@ -132,6 +133,10 @@ app.get('/api/v1', (req, res) => {
 // Importar i registrar rutes d'autenticació
 import authRoutes from './routes/authRoutes.js';
 app.use('/api/v1/auth', authRoutes);
+
+// Importar i registrar rutes d'empreses
+import empresaRoutes from './routes/empresaRoutes.js';
+app.use('/api/v1/empreses', empresaRoutes);
 
 // ========================================
 
